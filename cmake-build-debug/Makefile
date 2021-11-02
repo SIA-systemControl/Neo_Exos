@@ -123,32 +123,32 @@ Neo_Exos/fast:
 	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/build
 .PHONY : Neo_Exos/fast
 
-ButterWorthLP.o: ButterWorthLP.cpp.o
+LowPassFilter.o: LowPassFilter.cpp.o
 
-.PHONY : ButterWorthLP.o
+.PHONY : LowPassFilter.o
 
 # target to build an object file
-ButterWorthLP.cpp.o:
-	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.o
-.PHONY : ButterWorthLP.cpp.o
+LowPassFilter.cpp.o:
+	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.o
+.PHONY : LowPassFilter.cpp.o
 
-ButterWorthLP.i: ButterWorthLP.cpp.i
+LowPassFilter.i: LowPassFilter.cpp.i
 
-.PHONY : ButterWorthLP.i
+.PHONY : LowPassFilter.i
 
 # target to preprocess a source file
-ButterWorthLP.cpp.i:
-	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.i
-.PHONY : ButterWorthLP.cpp.i
+LowPassFilter.cpp.i:
+	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.i
+.PHONY : LowPassFilter.cpp.i
 
-ButterWorthLP.s: ButterWorthLP.cpp.s
+LowPassFilter.s: LowPassFilter.cpp.s
 
-.PHONY : ButterWorthLP.s
+.PHONY : LowPassFilter.s
 
 # target to generate assembly for a file
-ButterWorthLP.cpp.s:
-	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.s
-.PHONY : ButterWorthLP.cpp.s
+LowPassFilter.cpp.s:
+	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.s
+.PHONY : LowPassFilter.cpp.s
 
 Period.o: Period.cpp.o
 
@@ -294,9 +294,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... Neo_Exos"
-	@echo "... ButterWorthLP.o"
-	@echo "... ButterWorthLP.i"
-	@echo "... ButterWorthLP.s"
+	@echo "... LowPassFilter.o"
+	@echo "... LowPassFilter.i"
+	@echo "... LowPassFilter.s"
 	@echo "... Period.o"
 	@echo "... Period.i"
 	@echo "... Period.s"

@@ -72,13 +72,12 @@ int main(int argc, char *argv[]) {
     if (pthread_attr_init(&attr_robot) != 0)
         perror("[ROBOT-THREAD INIT FAILURE!]");
 
-    if (pthread_create(&robot, &attr_robot, robotcontrol, (void*)&task_cmd) != 0) {
+    if (pthread_create(&robot, &attr_robot, robotcontrol, (void *) &task_cmd) != 0) {
         perror("[ROBOT-THREAD CREATE FAILURE!]");
         return EXIT_FAILURE;
     }
 
-    if (pthread_attr_init(&attr_Period)
-        != 0)
+    if (pthread_attr_init(&attr_Period) != 0)
         perror("[PERIOD-THREAD INIT FAILURE!]");
 
     if (pthread_create(&Period, &attr_Period, PeriodControl, nullptr) != 0) {

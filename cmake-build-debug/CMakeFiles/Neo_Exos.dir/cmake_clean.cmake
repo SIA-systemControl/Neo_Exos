@@ -1,5 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.o"
+  "CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.o"
   "CMakeFiles/Neo_Exos.dir/Period.cpp.o"
   "CMakeFiles/Neo_Exos.dir/exos.cpp.o"
   "CMakeFiles/Neo_Exos.dir/main.cpp.o"

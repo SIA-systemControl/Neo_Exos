@@ -18,10 +18,6 @@
 #define HSHO 7
 #define Wrong 8
 
-
-
-
-
 typedef enum _GaitFSM {
     Stance, // 0
     HO_HS,  // 1
@@ -37,6 +33,7 @@ typedef struct _GaitMatrixFSM {
 } gaitMatrixFSM;
 
 gaitMatrixFSM gMFSM;
+
 
 void left_shift_array(double *arr, double input, int filter_window) {
     for (int i = 1; i < filter_window; i++) {

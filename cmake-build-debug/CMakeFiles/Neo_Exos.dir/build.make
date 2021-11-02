@@ -83,22 +83,9 @@ CMakeFiles/Neo_Exos.dir/exos.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Neo_Exos.dir/exos.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/yc/CLionProjects/Neo_Exos/exos.cpp -o CMakeFiles/Neo_Exos.dir/exos.cpp.s
 
-CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.o: CMakeFiles/Neo_Exos.dir/flags.make
-CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.o: ../ButterWorthLP.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.o -c /home/yc/CLionProjects/Neo_Exos/ButterWorthLP.cpp
-
-CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/yc/CLionProjects/Neo_Exos/ButterWorthLP.cpp > CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.i
-
-CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/yc/CLionProjects/Neo_Exos/ButterWorthLP.cpp -o CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.s
-
 CMakeFiles/Neo_Exos.dir/traj_generate.cpp.o: CMakeFiles/Neo_Exos.dir/flags.make
 CMakeFiles/Neo_Exos.dir/traj_generate.cpp.o: ../traj_generate.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/Neo_Exos.dir/traj_generate.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/Neo_Exos.dir/traj_generate.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Neo_Exos.dir/traj_generate.cpp.o -c /home/yc/CLionProjects/Neo_Exos/traj_generate.cpp
 
 CMakeFiles/Neo_Exos.dir/traj_generate.cpp.i: cmake_force
@@ -111,7 +98,7 @@ CMakeFiles/Neo_Exos.dir/traj_generate.cpp.s: cmake_force
 
 CMakeFiles/Neo_Exos.dir/timeInterval.cpp.o: CMakeFiles/Neo_Exos.dir/flags.make
 CMakeFiles/Neo_Exos.dir/timeInterval.cpp.o: ../timeInterval.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/Neo_Exos.dir/timeInterval.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/Neo_Exos.dir/timeInterval.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Neo_Exos.dir/timeInterval.cpp.o -c /home/yc/CLionProjects/Neo_Exos/timeInterval.cpp
 
 CMakeFiles/Neo_Exos.dir/timeInterval.cpp.i: cmake_force
@@ -124,7 +111,7 @@ CMakeFiles/Neo_Exos.dir/timeInterval.cpp.s: cmake_force
 
 CMakeFiles/Neo_Exos.dir/Period.cpp.o: CMakeFiles/Neo_Exos.dir/flags.make
 CMakeFiles/Neo_Exos.dir/Period.cpp.o: ../Period.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/Neo_Exos.dir/Period.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/Neo_Exos.dir/Period.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Neo_Exos.dir/Period.cpp.o -c /home/yc/CLionProjects/Neo_Exos/Period.cpp
 
 CMakeFiles/Neo_Exos.dir/Period.cpp.i: cmake_force
@@ -135,24 +122,37 @@ CMakeFiles/Neo_Exos.dir/Period.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Neo_Exos.dir/Period.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/yc/CLionProjects/Neo_Exos/Period.cpp -o CMakeFiles/Neo_Exos.dir/Period.cpp.s
 
+CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.o: CMakeFiles/Neo_Exos.dir/flags.make
+CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.o: ../LowPassFilter.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.o -c /home/yc/CLionProjects/Neo_Exos/LowPassFilter.cpp
+
+CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/yc/CLionProjects/Neo_Exos/LowPassFilter.cpp > CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.i
+
+CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/yc/CLionProjects/Neo_Exos/LowPassFilter.cpp -o CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.s
+
 # Object files for target Neo_Exos
 Neo_Exos_OBJECTS = \
 "CMakeFiles/Neo_Exos.dir/main.cpp.o" \
 "CMakeFiles/Neo_Exos.dir/exos.cpp.o" \
-"CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.o" \
 "CMakeFiles/Neo_Exos.dir/traj_generate.cpp.o" \
 "CMakeFiles/Neo_Exos.dir/timeInterval.cpp.o" \
-"CMakeFiles/Neo_Exos.dir/Period.cpp.o"
+"CMakeFiles/Neo_Exos.dir/Period.cpp.o" \
+"CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.o"
 
 # External object files for target Neo_Exos
 Neo_Exos_EXTERNAL_OBJECTS =
 
 Neo_Exos: CMakeFiles/Neo_Exos.dir/main.cpp.o
 Neo_Exos: CMakeFiles/Neo_Exos.dir/exos.cpp.o
-Neo_Exos: CMakeFiles/Neo_Exos.dir/ButterWorthLP.cpp.o
 Neo_Exos: CMakeFiles/Neo_Exos.dir/traj_generate.cpp.o
 Neo_Exos: CMakeFiles/Neo_Exos.dir/timeInterval.cpp.o
 Neo_Exos: CMakeFiles/Neo_Exos.dir/Period.cpp.o
+Neo_Exos: CMakeFiles/Neo_Exos.dir/LowPassFilter.cpp.o
 Neo_Exos: CMakeFiles/Neo_Exos.dir/build.make
 Neo_Exos: CMakeFiles/Neo_Exos.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable Neo_Exos"

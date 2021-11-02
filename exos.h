@@ -21,7 +21,6 @@
 
 // FilterData
 #include "Utils.h"
-#include "ButterWorthLP.h"
 
 // Unit transformation
 #include "Unit.h"
@@ -48,6 +47,8 @@
 
 // timer
 #include "timeInterval.h"
+
+
 
 #define left  true
 #define right false
@@ -89,24 +90,25 @@
 #define r_ankle 0
 
 /** ------ Left Part ----- **/
+//TODO: adjust to positive number
 
-#define left_hip_init_motor_cnt 61842
-#define left_hip_init_spring_cnt 1798
+#define left_hip_init_motor_cnt 222865
+#define left_hip_init_spring_cnt 1797
 
-#define left_knee_init_motor_cnt 89287
-#define left_knee_init_spring_cnt 2702
+#define left_knee_init_motor_cnt 280835
+#define left_knee_init_spring_cnt 2703
 
-#define left_ankle_init_motor_cnt 20348
+#define left_ankle_init_motor_cnt -395555
 #define left_ankle_init_spring_cnt 1101
 
 /** ------ Right Part ----- **/
-#define right_hip_init_motor_cnt -83697
-#define right_hip_init_spring_cnt 1310
+#define right_hip_init_motor_cnt -76643
+#define right_hip_init_spring_cnt 1311
 
-#define right_knee_init_motor_cnt -74182
-#define right_knee_init_spring_cnt 244
+#define right_knee_init_motor_cnt 104996
+#define right_knee_init_spring_cnt 245
 
-#define right_ankle_init_motor_cnt -21918
+#define right_ankle_init_motor_cnt -237651
 #define right_ankle_init_spring_cnt 3976
 
 #ifdef Tracking_Impendance
@@ -114,8 +116,8 @@
 #define left_hip_init_rad -0.05 // 0.38
 #define left_knee_init_rad -0.12 // -0.3
 #define left_ankle_init_rad 0.14 // -0.6
-#define right_hip_init_rad -0.05
-#define right_knee_init_rad -0.12
+#define right_hip_init_rad -0.07
+#define right_knee_init_rad -0.15
 #define right_ankle_init_rad 0.14
 
 #endif
@@ -671,7 +673,7 @@ int ActivateMaster(void) {
 
 static void SIG_handle(int sig);
 
-void cyclic_task(int task_cmd);
+void cyclic_task(int task_Cmd);
 
 int pause_to_continue() {
     std::cout << "Pause Now." << std::endl;
