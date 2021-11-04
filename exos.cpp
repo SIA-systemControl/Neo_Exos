@@ -69,6 +69,9 @@ PID_position r_Ankle_pd(0, 0, 0);
 
 Eigen::Vector3d d4q_r, d3q_r, ddq_r, dq_r, q_r;
 Eigen::Vector3d dq_e_r, q_e_r;
+
+Eigen::Vector3d dtheta_r, theta_r;
+
 dynamics right_SEA_dynamics(right);
 
 PID_position l_Hip_pd(0, 0, 0);
@@ -394,8 +397,18 @@ void cyclic_task(int task_Cmd) {
 
             int cnt_spring_3 = EC_READ_S32(domainTx_pd + offset.second_position[r_hip]);
 
+//            if (task_Cmd != 2) { // if running CSP mode, avoid encoder cnt mismatch
+//                while (cnt_motor_1 < 0)
+//                    cnt_motor_1 += 131072;
+//                while (cnt_motor_2 < 0)
+//                    cnt_motor_2 += 131072;
+//                while (cnt_motor_3 < 0)
+//                    cnt_motor_3 += 131072;
+//            }
+
             if (cnt_spring_3 < 0)
                 cnt_spring_3 += 4096;
+
 
             int RPM_spring_3 = EC_READ_S32(domainTx_pd + offset.second_velocity[r_hip]);
 
@@ -501,8 +514,10 @@ void cyclic_task(int task_Cmd) {
 
             double r_hip_rad = link_3_rad;
             double r_hip_vel = link_3_vel;
+
             double r_knee_rad = link_2_rad;
             double r_knee_vel = link_2_vel;
+
             double r_ankle_rad = link_1_rad;
             double r_ankle_vel = link_1_vel;
 
@@ -626,13 +641,27 @@ void cyclic_task(int task_Cmd) {
                     if (reset_step == 1 &&
                         reset_ready_cnt != 0) { // reset_ready_cnt != 0 avoid assigning velocity in CSP mode.
 
-                        double reset_r_hip_vel = r_Hip_reset_pid.pid_control(right_hip_init_rad,
-                                                                             r_hip_rad, 3000);
-                        double reset_r_knee_vel = r_Knee_reset_pid.pid_control(right_knee_init_rad,
-                                                                               r_knee_rad, 3000);
-                        double reset_r_ankle_vel = r_Ankle_reset_pid.pid_control(right_ankle_init_rad,
-                                                                                 r_ankle_rad,
-                                                                                 3000);
+                        double reset_r_hip_vel = 0;
+                        double reset_r_knee_vel = 0;
+                        double reset_r_ankle_vel = 0;
+
+                        if (task_Cmd == 2) {
+                            reset_r_hip_vel = r_Hip_reset_pid.pid_control(right_hip_identify_init_rad,
+                                                                          r_hip_rad, 3000);
+                            reset_r_knee_vel = r_Knee_reset_pid.pid_control(right_knee_identify_init_rad,
+                                                                            r_knee_rad, 3000);
+                            reset_r_ankle_vel = r_Ankle_reset_pid.pid_control(right_ankle_identify_init_rad,
+                                                                              r_ankle_rad, 3000);
+                        } else {
+                            reset_r_hip_vel = r_Hip_reset_pid.pid_control(right_hip_init_rad,
+                                                                          r_hip_rad, 3000);
+                            reset_r_knee_vel = r_Knee_reset_pid.pid_control(right_knee_init_rad,
+                                                                            r_knee_rad, 3000);
+                            reset_r_ankle_vel = r_Ankle_reset_pid.pid_control(right_ankle_init_rad, r_ankle_rad,
+                                                                              3000);
+                        }
+
+
                         if (task_Cmd != 6) {
                             EC_WRITE_S32(domainRx_pd + offset.target_velocity[r_hip], reset_r_hip_vel);
                             EC_WRITE_S32(domainRx_pd + offset.target_velocity[r_knee], reset_r_knee_vel);
@@ -1242,33 +1271,49 @@ void cyclic_task(int task_Cmd) {
                             EC_WRITE_S8(domainRx_pd + offset.operation_mode[i], CSP);
                     }
 
+
                     double Identify_hip_rad = 0.6 * identify_position(curve_cnt, i_a0_hip, i_a_hip, i_b_hip, i_w_hip);
                     double Identify_knee_rad =
-                            0.6 * identify_position(curve_cnt, i_a0_knee, i_a_knee, i_b_knee, i_w_knee);
+                            0.8 * identify_position(curve_cnt, i_a0_knee, i_a_knee, i_b_knee, i_w_knee);
                     double Identify_ankle_rad = 0.6 * identify_position(curve_cnt, i_a0_ankle, i_a_ankle, i_b_ankle,
                                                                         i_w_ankle) - 0.57;
 
                     double Identify_hip_vel = 0.6 * identify_velocity(curve_cnt, i_a0_hip, i_a_hip, i_b_hip, i_w_hip);
                     double Identify_knee_vel =
-                            0.6 * identify_velocity(curve_cnt, i_a0_knee, i_a_knee, i_b_knee, i_w_knee);
+                            0.8 * identify_velocity(curve_cnt, i_a0_knee, i_a_knee, i_b_knee, i_w_knee);
                     double Identify_ankle_vel =
                             0.6 * identify_velocity(curve_cnt, i_a0_ankle, i_a_ankle, i_b_ankle, i_w_ankle);
 
+                    double Identify_hip_acc =
+                            0.6 * identify_acceleration(curve_cnt, i_a0_hip, i_a_hip, i_b_hip, i_w_hip);
+                    double Identify_knee_acc =
+                            0.8 * identify_acceleration(curve_cnt, i_a0_knee, i_a_knee, i_b_knee, i_w_knee);
+                    double Identify_ankle_acc =
+                            0.6 * identify_acceleration(curve_cnt, i_a0_ankle, i_a_ankle, i_b_ankle, i_w_ankle);
+
+
                     // Right Part
                     int Identify_hip_cnt =
-                            cnt_startup_hip + 100 * pos_rad2inc_17bits(Identify_hip_rad - right_hip_init_rad);
+                            cnt_startup_hip + 100 * pos_rad2inc_17bits(Identify_hip_rad - right_hip_identify_init_rad);
                     int Identify_knee_cnt =
-                            cnt_startup_knee + 80 * pos_rad2inc_17bits(Identify_knee_rad - right_knee_init_rad);
+                            cnt_startup_knee +
+                            80 * pos_rad2inc_17bits(Identify_knee_rad - right_knee_identify_init_rad);
                     int Identify_ankle_cnt =
-                            cnt_startup_ankle + 80 * pos_rad2inc_17bits(Identify_ankle_rad - right_ankle_init_rad);
+                            cnt_startup_ankle +
+                            80 * pos_rad2inc_17bits(Identify_ankle_rad - right_ankle_identify_init_rad);
 
-                    // left Part
-//                    int Identify_hip_cnt =
-//                            cnt_startup_hip + 100 * pos_rad2inc_17bits(Identify_hip_rad - left_hip_init_rad);
-//                    int Identify_knee_cnt =
-//                            cnt_startup_knee + 80 * pos_rad2inc_17bits(Identify_knee_rad - left_knee_init_rad);
-//                    int Identify_ankle_cnt =
-//                            cnt_startup_ankle + 80 * pos_rad2inc_17bits(Identify_ankle_rad - left_ankle_init_rad);
+                    /**
+                     * ====== Dynamic verification =====
+                     */
+                    q_r << r_hip_rad, r_knee_rad, r_ankle_rad;
+                    dq_r << r_hip_vel, r_knee_vel, r_ankle_vel;
+                    ddq_r << Identify_hip_acc, Identify_knee_acc, Identify_ankle_acc;
+                    theta_r << r_hip_m_rad, r_knee_m_rad, r_ankle_m_rad;
+                    dtheta_r << r_hip_m_vel, r_knee_m_vel, r_ankle_m_vel;
+
+                    Eigen::Vector3d Dyn;
+                    Dyn = right_SEA_dynamics.coupling_dynamics(ddq_r, dq_r, q_r, ddq_r, dtheta_r);
+
 
                     EC_WRITE_S32(domainRx_pd + offset.target_position[r_hip], Identify_hip_cnt);
                     EC_WRITE_S32(domainRx_pd + offset.target_position[r_knee], Identify_knee_cnt);
@@ -1296,8 +1341,9 @@ void cyclic_task(int task_Cmd) {
                     right_outFile << Identify_hip_rad << ',' << Identify_knee_rad << ',' << Identify_ankle_rad << ','
                                   << r_hip_rad << ',' << r_knee_rad << ',' << r_ankle_rad << ',' << r_hip_m_rad << ','
                                   << r_knee_m_rad << ','
-                                  << r_ankle_m_rad << ',' << tau_mot_3 << ',' << tau_mot_2 << ',' << tau_mot_1
-                                  << std::endl;
+                                  << r_ankle_m_rad << ',' << tau_mot_3 << ',' << tau_mot_2 << ',' << tau_mot_1 << ','
+                                  << Dyn(0) << ',' << Dyn(1) << ',' << Dyn(2) << std::endl;
+
                     right_velFile << Identify_hip_vel << ',' << Identify_knee_vel << ',' << Identify_ankle_vel << ','
                                   << r_hip_vel << ',' << r_knee_vel << ',' << r_ankle_vel << ',' << r_hip_m_vel << ','
                                   << r_knee_m_vel << ',' << r_ankle_m_vel << ',' << tau_mot_4 << ',' << tau_mot_5 << ','
@@ -1311,6 +1357,9 @@ void cyclic_task(int task_Cmd) {
                                  << l_hip_vel << ',' << l_knee_vel << ',' << l_ankle_vel << ',' << l_hip_m_vel << ','
                                  << l_knee_m_vel << ',' << l_ankle_m_vel << ',' << tau_mot_4 << ',' << tau_mot_5 << ','
                                  << tau_mot_6 << std::endl;
+
+                    right_save_file << Identify_hip_cnt << ',' << Identify_knee_cnt << ',' << Identify_ankle_cnt
+                                    << std::endl;
 
                 }
                     break;
@@ -1432,9 +1481,9 @@ void cyclic_task(int task_Cmd) {
                         //      Here is an estimate of spring,
                         //      the accuracy will be improved with load increase during identification experiment
 
-                        Ks_r << 60, 0, 0,
-                                0, 60, 0,
-                                0, 0, 60;
+                        Ks_r << 178, 0, 0,
+                                0, 200, 0,
+                                0, 0, 135;
 
                         Ks_l << 60, 0, 0,
                                 0, 60, 0,
@@ -1442,7 +1491,7 @@ void cyclic_task(int task_Cmd) {
 
                         Eigen::Vector3d B_r, K_r, B_l, K_l;
 
-                        K_r << 30, 30, 20;
+                        K_r << 60, 60, 20;
                         B_r << 0.2, 0.2, 1; // 0.6 0.6 0.50
 
                         K_l << 30, 30, 20;
@@ -1451,10 +1500,8 @@ void cyclic_task(int task_Cmd) {
                         d4q_r << hip_ref_4th_r, knee_ref_4th_r, ankle_ref_4th_r;
                         d3q_r << hip_ref_3rd_r, knee_ref_3rd_r, ankle_ref_3rd_r;
                         ddq_r << hip_ref_acc_r, (knee_ref_acc_r), (ankle_ref_acc_r);
-                        dq_r << hip_ref_vel_r, (knee_ref_vel_r), (ankle_ref_vel_r);
-                        q_r << hip_ref_rad_r, (knee_ref_rad_r), (ankle_ref_rad_r);
-
-//                        q_r << r_hip_rad, r_knee_rad, r_ankle_rad;
+                        dq_r << r_hip_vel, r_knee_vel, r_ankle_vel;
+                        q_r << r_hip_rad, r_knee_rad, r_ankle_rad;
 
                         dq_e_r << hip_ref_vel_r - r_hip_vel, (knee_ref_vel_r - r_knee_vel), (ankle_ref_vel_r -
                                                                                              r_ankle_vel);
@@ -1501,12 +1548,15 @@ void cyclic_task(int task_Cmd) {
                         compensation_r = right_SEA_dynamics.Gravity_term(q_r);
                         compensation_l = left_SEA_dynamics.Gravity_term(q_l);
 
-                        r_Hip_pd.pid_set_params(0.3, 0, 2);
-                        r_Knee_pd.pid_set_params(0.6, 0, 3);
+                        Eigen::Vector3d C_term_r;
+                        C_term_r = right_SEA_dynamics.Coriolis_term(dq_r, q_r);
+
+                        r_Hip_pd.pid_set_params(0.2, 0, 2);
+                        r_Knee_pd.pid_set_params(0.15, 0, 1.4); // 1.6
                         r_Ankle_pd.pid_set_params(0.5, 0, 0.3);
 
                         l_Hip_pd.pid_set_params(0.2, 0, 2);
-                        l_Knee_pd.pid_set_params(0.3, 0, 3.5); // 0.35,3.5
+                        l_Knee_pd.pid_set_params(0.3, 0, 3.5);
                         l_Ankle_pd.pid_set_params(0.5, 0, 0.3);
 
                         //TODO: when running in DRAG mode, something wrong if compensations are added.
@@ -1530,9 +1580,9 @@ void cyclic_task(int task_Cmd) {
                         //TODO: added compensation make tracking overshoot, but without it become better ???
 
                         double r_hip_Impedance =
-                                (B_r(0) * dq_e_r(0) + K_r(0) * q_e_r(0));
+                                0.7 * compensation_r(0) + (B_r(0) * dq_e_r(0) + K_r(0) * q_e_r(0));
                         double r_knee_Impedance =
-                                (B_r(1) * dq_e_r(1) + K_r(1) * q_e_r(1));
+                                0.75 * compensation_r(1) + (B_r(1) * dq_e_r(1) + K_r(1) * q_e_r(1));
                         double r_ankle_Impedance =
                                 compensation_r(2) + (B_r(2) * dq_e_r(2) + K_r(2) * q_e_r(2));
 
@@ -1553,10 +1603,10 @@ void cyclic_task(int task_Cmd) {
                         double l_ankle_tau_spr = Ks_l(2, 2) * (l_ankle_s_rad);
 
                         double tau_pd_hip_r = r_Hip_pd.pid_control(
-                                r_hip_Impedance, r_hip_tau_spr, 0.9);
+                                r_hip_Impedance, r_hip_tau_spr, 1.5);
 
                         double tau_pd_knee_r = r_Knee_pd.pid_control(
-                                r_knee_Impedance, r_knee_tau_spr, 2);
+                                r_knee_Impedance, r_knee_tau_spr, 1.5);
 
                         double tau_pd_ankle_r = r_Ankle_pd.pid_control(
                                 r_ankle_Impedance, r_ankle_tau_spr, 0.9);
@@ -1672,9 +1722,9 @@ void cyclic_task(int task_Cmd) {
                         right_outFile << hip_ref_rad_r << ',' << knee_ref_rad_r << ',' << ankle_ref_rad_r << ','
                                       << r_hip_rad << ',' << r_knee_rad << ',' << r_ankle_rad << ','
                                       << r_hip_m_rad << ',' << r_knee_m_rad << ',' << r_ankle_m_rad << ','
-                                      << tau_mot_1 << ',' << tau_mot_2 << ',' << tau_mot_3 << ','
-                                      << tau_pd_hip_r << ',' << tau_pd_knee_r << ',' << tau_pd_ankle_r << ',' << Gc_main
-                                      << std::endl;
+                                      << tau_mot_3 << ',' << tau_mot_2 << ',' << tau_mot_1 << ','
+                                      << tau_pd_hip_r << ',' << tau_pd_knee_r << ',' << tau_pd_ankle_r << ','
+                                      << 0.8 * compensation_r(2) << ',' << C_term_r(1) << std::endl;
 
                         right_velFile << hip_ref_vel_r << ',' << knee_ref_vel_r << ',' << ankle_ref_vel_r << ','
                                       << r_hip_vel << ',' << r_knee_vel << ',' << r_ankle_vel << ','
@@ -1712,7 +1762,7 @@ void cyclic_task(int task_Cmd) {
                     if (POST_RESET)
                         gTaskFsm.m_gtaskFSM = task_working_RESET;
 
-                    if (curve_cnt_right >= P_main * (30 + 0.35)) {
+                    if (time_cnt >= 3000 * (20 + 0.35)) {
                         EtherCAT_ONLINE = false;
                         std::cout << "[End of Program...]" << std::endl;
                         break;

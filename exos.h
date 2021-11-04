@@ -92,6 +92,15 @@
 /** ------ Left Part ----- **/
 //TODO: adjust to positive number
 
+/**
+ * r_hip   =>31931
+    r_knee  =>899085
+    r_ankle =>-61781
+    l_hip   =>143805
+    l_knee  =>39082
+    l_ankle =>104080
+ */
+
 #define left_hip_init_motor_cnt 222865
 #define left_hip_init_spring_cnt 1797
 
@@ -102,14 +111,14 @@
 #define left_ankle_init_spring_cnt 1101
 
 /** ------ Right Part ----- **/
-#define right_hip_init_motor_cnt -76643
+#define right_hip_init_motor_cnt -787691
 #define right_hip_init_spring_cnt 1311
 
-#define right_knee_init_motor_cnt 104996
+#define right_knee_init_motor_cnt 648146
 #define right_knee_init_spring_cnt 245
 
-#define right_ankle_init_motor_cnt -237651
-#define right_ankle_init_spring_cnt 3976
+#define right_ankle_init_motor_cnt -887761
+#define right_ankle_init_spring_cnt 3977
 
 #ifdef Tracking_Impendance
 
@@ -144,9 +153,9 @@
 
 #endif
 
-//#define right_hip_init_rad  0.38
-//#define right_knee_init_rad -0.3
-//#define right_ankle_init_rad 0.37
+#define right_hip_identify_init_rad  0.38
+#define right_knee_identify_init_rad -0.42
+#define right_ankle_identify_init_rad 0.37
 
 // etherCAT object
 static ec_master_t *master = NULL;

@@ -213,9 +213,9 @@ Eigen::Vector3d dynamics::Friction_motor(Eigen::Vector3d dtheta) {
 
     double friction_m_1, friction_m_2, friction_m_3;
 
-    friction_m_1 = fv1_m * dtheta1 + fc1_m * tanh(2 * dtheta1 / 0.02);
-    friction_m_2 = fv2_m * dtheta2 + fc2_m * tanh(2 * dtheta2 / 0.02);
-    friction_m_3 = fv3_m * dtheta3 + fc3_m * tanh(2 * dtheta3 / 0.02);
+    friction_m_1 = fv1_m * N1 * dtheta1 + fc1_m * tanh(2 * dtheta1 / 0.02);
+    friction_m_2 = fv2_m * N2 * dtheta2 + fc2_m * tanh(2 * dtheta2 / 0.02);
+    friction_m_3 = fv3_m * N3 * dtheta3 + fc3_m * tanh(2 * dtheta3 / 0.02);
 
     Eigen::Vector3d Friction_M;
     Friction_M << friction_m_1, friction_m_2, friction_m_3;
@@ -250,7 +250,6 @@ dynamics::coupling_dynamics(Eigen::Vector3d ddq, Eigen::Vector3d dq, Eigen::Vect
     Inertia = dynamics::Inertia_term(q);
     Coriolis = dynamics::Coriolis_term(dq, q);
     Gravity = dynamics::Gravity_term(q);
-    friction_l = dynamics::Friction_link(dq);
     friction_m = dynamics::Friction_motor(dtheta);
 //    friction_m(1) = 0;
 
@@ -288,7 +287,7 @@ dynamics::coupling_dynamics(Eigen::Vector3d ddq, Eigen::Vector3d dq, Eigen::Vect
     H = Inertia + SBS;
 
     Eigen::Vector3d tau_m;
-    tau_m = (H + S.transpose()) * ddq + (S + B) * ddtheta + Coriolis + Gravity + friction_l + friction_m;
+    tau_m = (H + S.transpose()) * ddq + (S + B) * ddtheta + Coriolis + Gravity + friction_m;
 //    tau_m = (H + S.transpose()) * ddq_l + (S + B) * ddtheta + Coriolis + Gravity + friction_l;
     return tau_m;
 }
@@ -692,15 +691,15 @@ dynamics::dynamics(bool part) {
         Im2 = 0.42;
         Im3 = 0.42;
     } else { // right
-        L1zz = 0.5148;
-        lx1 = 1.3272;
-        L2zz = 0.2319;
-        lx2 = 0.8000;
-        L3zz = 0.0019;
-        lx3 = 0.0150;
-        m1 = 2.2;
-        m2 = 1.75;
-        m3 = 1.04;
+        L1zz = 0.6793;
+        lx1 = 2.3050;
+        L2zz = 0.3907;
+        lx2 = 0.9856;
+        L3zz = 0.0099;
+        lx3 = 0.1285;
+        m1 = 2.1;
+        m2 = 1.55;
+        m3 = 1.14 ;
         m1_r = 0.3;
         m2_r = 0.3;
         m3_r = 0.3;
@@ -708,23 +707,17 @@ dynamics::dynamics(bool part) {
         N2 = 80;
         N3 = 80;
         grav_acc = 9.81;
-        fv1 = -8.5779;
-        fc1 = 1.2151;
-        fv2 = 23.5171;
-        fc2 = 2.6145;
-        fv3 = -105.1398; //-186.5331
-        fc3 = -9.3644; //7.9534
-        fv1_m = 23.2718;
-        fc1_m = 2.3187;
-        fv2_m = -14.0057;
-        fc2_m = 0.4005;
-        fv3_m = 112.4854;
-        fc3_m = 13.1910;
-        L1 = 0.4;
+        fv1_m = 0.1439;
+        fc1_m = 2.4429;
+        fv2_m = 0.0863;
+        fc2_m = 2.6517;
+        fv3_m = 0.0763;
+        fc3_m = 3.2944;
+        L1 = 0.41;
         L2 = 0.4;
-        Im1 = 0.52;
-        Im2 = 0.42;
-        Im3 = 0.42;
+        Im1 = 0.33;
+        Im2 = 0.24;
+        Im3 = 0.24;
     }
 
 }
