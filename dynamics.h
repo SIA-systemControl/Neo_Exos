@@ -287,8 +287,11 @@ dynamics::coupling_dynamics(Eigen::Vector3d ddq, Eigen::Vector3d dq, Eigen::Vect
     H = Inertia + SBS;
 
     Eigen::Vector3d tau_m;
-    tau_m = (H + S.transpose()) * ddq + (S + B) * ddtheta + Coriolis + Gravity + friction_m;
+//    tau_m = (H + S.transpose()) * ddq + (S + B) * ddtheta + Coriolis + Gravity + friction_m;
 //    tau_m = (H + S.transpose()) * ddq_l + (S + B) * ddtheta + Coriolis + Gravity + friction_l;
+
+    tau_m = H * ddq;
+
     return tau_m;
 }
 

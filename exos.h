@@ -57,7 +57,7 @@
 #define Tracking_Impendance
 //#define Sit2Stand_mode
 
-#define TASK_FREQUENCY 1000.0 // Hz
+#define TASK_FREQUENCY 200.0 // Hz
 #define TARGET_VELOCITY 100 // PUU (Synapticon default PUU is rpm)
 
 /* NOTICE:
@@ -101,24 +101,24 @@
     l_ankle =>104080
  */
 
-#define left_hip_init_motor_cnt 222865
-#define left_hip_init_spring_cnt 1797
+#define left_hip_init_motor_cnt 90297
+#define left_hip_init_spring_cnt 1799
 
-#define left_knee_init_motor_cnt 280835
-#define left_knee_init_spring_cnt 2703
+#define left_knee_init_motor_cnt 114599
+#define left_knee_init_spring_cnt 2701
 
-#define left_ankle_init_motor_cnt -395555
+#define left_ankle_init_motor_cnt 115162
 #define left_ankle_init_spring_cnt 1101
 
 /** ------ Right Part ----- **/
-#define right_hip_init_motor_cnt -787691
-#define right_hip_init_spring_cnt 1311
+#define right_hip_init_motor_cnt -54337
+#define right_hip_init_spring_cnt 1312
 
-#define right_knee_init_motor_cnt 648146
-#define right_knee_init_spring_cnt 245
+#define right_knee_init_motor_cnt -18994
+#define right_knee_init_spring_cnt 244
 
-#define right_ankle_init_motor_cnt -887761
-#define right_ankle_init_spring_cnt 3977
+#define right_ankle_init_motor_cnt -2390
+#define right_ankle_init_spring_cnt 3978
 
 #ifdef Tracking_Impendance
 
@@ -156,6 +156,10 @@
 #define right_hip_identify_init_rad  0.38
 #define right_knee_identify_init_rad -0.42
 #define right_ankle_identify_init_rad 0.37
+
+#define left_hip_identify_init_rad  0.38
+#define left_knee_identify_init_rad -0.42
+#define left_ankle_identify_init_rad 0.37
 
 // etherCAT object
 static ec_master_t *master = NULL;

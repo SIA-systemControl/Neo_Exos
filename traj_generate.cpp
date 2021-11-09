@@ -10,7 +10,7 @@
  * For Tracking:
  *      Ts = 0.001
  */
-#define Ts 0.001
+#define Ts 0.005
 
 double base_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0) {
     double sum = 0;
