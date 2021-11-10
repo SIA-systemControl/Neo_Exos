@@ -49,6 +49,8 @@ public:
 
     Eigen::Vector3d Friction_motor(Eigen::Vector3d dtheta);
 
+    Eigen::Vector3d H_term(Eigen::Vector3d q,Eigen::Vector3d ddq);
+
     Eigen::Vector3d
     coupling_dynamics(Eigen::Vector3d ddq, Eigen::Vector3d dq, Eigen::Vector3d q, Eigen::Vector3d ddtheta,
                       Eigen::Vector3d dtheta);
@@ -143,6 +145,54 @@ Eigen::Matrix<double, 3, 3> dynamics::Inertia_term(Eigen::Vector3d q) {
 
     return Inertia;
 
+}
+
+Eigen::Vector3d dynamics::H_term(Eigen::Vector3d q, Eigen::Vector3d ddq){
+    double q1 = q(0);
+    double q2 = q(1);
+    double q3 = q(2);
+
+    double M11 = L1zz + L2zz + L3zz + lx3 * (2 * (L1 * cos(q2 + q3) + L2 * cos(q3))) + lx2 * (2 * L1 * cos(q2));
+    double M12 = L2zz + L3zz + lx3 * (2 * L2 * cos(q3) + L1 * cos(q2 + q3)) + lx2 * L1 * cos(q2);
+    double M13 = L3zz + lx3 * (L1 * cos(q2 + q3) + L2 * cos(q3));
+    double M22 = L2zz + L3zz + lx3 * 2 * L2 * cos(q3);
+    double M23 = L3zz + lx3 * L2 * cos(q3);
+    double M33 = L3zz;
+
+    Eigen::Matrix<double, 3, 3> M;
+    M << M11, M12, M13,
+            M12, M22, M23,
+            M13, M23, M33;
+
+    Eigen::Matrix<double, 3, 3> Inertia_m;
+    double Mr11, Mr12, Mr22;
+    Mr11 = (m2_r + m3_r) * pow(L1, 2) + m3_r * pow(L2, 2) + 2 * m3_r * L1 * L2 * cos(q2);
+    Mr12 = m3_r * pow(L2, 2) + m3_r * L1 * L2 * cos(q2);
+    Mr22 = m3_r * pow(L2, 2);
+
+    Inertia_m << Mr11, Mr12, 0,
+            Mr12, Mr22, 0,
+            0, 0, 0;
+
+    Eigen::Matrix3d B;
+    Eigen::Vector3d I_m;
+    I_m << Im1, Im2, Im3;
+    B = I_m.asDiagonal();
+
+    Eigen::Matrix3d S;
+    S << 0, Im2 / N2, Im3 / N3,
+            0, 0, Im3 / N3,
+            0, 0, 0;
+
+    Eigen::Matrix3d SBS;
+    SBS << Im2 / pow(N2, 2) + Im3 / pow(N3, 2), Im3 / pow(N3, 2), 0,
+            Im3 / pow(N3, 2), Im3 / pow(N3, 2), 0,
+            0, 0, 0;
+
+    Eigen::Matrix3d H;
+    H = M + SBS;
+
+    return H*ddq;
 }
 
 Eigen::Vector3d dynamics::Coriolis_term(Eigen::Vector3d dq, Eigen::Vector3d q) {
@@ -287,10 +337,10 @@ dynamics::coupling_dynamics(Eigen::Vector3d ddq, Eigen::Vector3d dq, Eigen::Vect
     H = Inertia + SBS;
 
     Eigen::Vector3d tau_m;
-//    tau_m = (H + S.transpose()) * ddq + (S + B) * ddtheta + Coriolis + Gravity + friction_m;
+    tau_m = (H + S.transpose()) * ddq + (S + B) * ddtheta + Coriolis + Gravity + friction_m;
 //    tau_m = (H + S.transpose()) * ddq_l + (S + B) * ddtheta + Coriolis + Gravity + friction_l;
 
-    tau_m = H * ddq;
+//    tau_m = H * ddq;
 
     return tau_m;
 }
@@ -660,15 +710,15 @@ dynamics::dynamics(bool part) {
     // left = 1;
     // right = 0;
     if (part) { // left
-        L1zz = 0.5148;
-        lx1 = 1.5000;
-        L2zz = 0.2319;
-        lx2 = 0.7568;
-        L3zz = 0.0019;
-        lx3 = 0.0150;
-        m1 = 2.2;
-        m2 = 1.75;
-        m3 = 1.04;
+        L1zz = 0.6793;
+        lx1 = 2.2079;
+        L2zz = 0.3907;
+        lx2 = 1.0046;
+        L3zz = 0.0099;
+        lx3 = 0.1285;
+        m1 = 2.1;
+        m2 = 1.55;
+        m3 = 1.14 ;
         m1_r = 0.3;
         m2_r = 0.3;
         m3_r = 0.3;
@@ -676,23 +726,17 @@ dynamics::dynamics(bool part) {
         N2 = 80;
         N3 = 80;
         grav_acc = 9.81;
-        fv1 = -5.7820;
-        fc1 = 0.5981;
-        fv2 = 34.2982;
-        fc2 = 2.4727;
-        fv3 = -31.5343;
-        fc3 = -0.1232;
-        fv1_m = 22.6286;
-        fc1_m = 3.0042;
-        fv2_m = -25.5452;
-        fc2_m = 0.1139;
-        fv3_m = 39.3079;
-        fc3_m = 3.8825;
-        L1 = 0.4;
+        fv1_m = 0.1898;
+        fc1_m = 3.1135;
+        fv2_m = 0.1075;
+        fc2_m = 2.7995;
+        fv3_m = 0.0998;
+        fc3_m = 3.2850;
+        L1 = 0.41;
         L2 = 0.4;
-        Im1 = 0.52;
-        Im2 = 0.42;
-        Im3 = 0.42;
+        Im1 = 0.33;
+        Im2 = 0.24;
+        Im3 = 0.24;
     } else { // right
         L1zz = 0.6793;
         lx1 = 2.3050;
