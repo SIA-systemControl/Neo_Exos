@@ -44,10 +44,10 @@ RM = /home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/yc/CLionProjects/Neo_Exos
+CMAKE_SOURCE_DIR = /home/yc/CLionProjects/SIA_team/Neo_Exos
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/yc/CLionProjects/Neo_Exos/cmake-build-debug
+CMAKE_BINARY_DIR = /home/yc/CLionProjects/SIA_team/Neo_Exos/cmake-build-debug
 
 #=============================================================================
 # Directory level rules for the build root directory
@@ -74,14 +74,14 @@ clean: CMakeFiles/Neo_Exos.dir/clean
 CMakeFiles/Neo_Exos.dir/all:
 	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/depend
 	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Built target Neo_Exos"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/yc/CLionProjects/SIA_team/Neo_Exos/cmake-build-debug/CMakeFiles --progress-num=1,2,3,4,5,6,7 "Built target Neo_Exos"
 .PHONY : CMakeFiles/Neo_Exos.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/Neo_Exos.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles 7
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/SIA_team/Neo_Exos/cmake-build-debug/CMakeFiles 7
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/Neo_Exos.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/SIA_team/Neo_Exos/cmake-build-debug/CMakeFiles 0
 .PHONY : CMakeFiles/Neo_Exos.dir/rule
 
 # Convenience name for target.

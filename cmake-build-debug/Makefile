@@ -48,10 +48,10 @@ RM = /home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/yc/CLionProjects/Neo_Exos
+CMAKE_SOURCE_DIR = /home/yc/CLionProjects/SIA_team/Neo_Exos
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/yc/CLionProjects/Neo_Exos/cmake-build-debug
+CMAKE_BINARY_DIR = /home/yc/CLionProjects/SIA_team/Neo_Exos/cmake-build-debug
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles /home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/SIA_team/Neo_Exos/cmake-build-debug/CMakeFiles /home/yc/CLionProjects/SIA_team/Neo_Exos/cmake-build-debug/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/SIA_team/Neo_Exos/cmake-build-debug/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
