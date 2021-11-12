@@ -6,5 +6,5 @@ CXX_FLAGS = -g   -std=gnu++2a
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/opt/etherlab/include -I/home/yc/CLionProjects/Neo_Exos/./LpSensor-1.3.5-Linux-x86-64/include 
+CXX_INCLUDES = -I/opt/etherlab/include -I/home/yc/CLionProjects/SIA_team/Neo_Exos/./LpSensor-1.3.5-Linux-x86-64/include 
 
