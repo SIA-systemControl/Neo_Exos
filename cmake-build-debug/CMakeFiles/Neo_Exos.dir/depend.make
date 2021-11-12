@@ -11,7 +11,9 @@ CMakeFiles/Neo_Exos.dir/exos.cpp.o: ../LowPassFilter.hpp
 CMakeFiles/Neo_Exos.dir/exos.cpp.o: ../PID.h
 CMakeFiles/Neo_Exos.dir/exos.cpp.o: ../Unit.h
 CMakeFiles/Neo_Exos.dir/exos.cpp.o: ../Utils.h
+CMakeFiles/Neo_Exos.dir/exos.cpp.o: ../csvReader.hpp
 CMakeFiles/Neo_Exos.dir/exos.cpp.o: ../dataDecode.h
+CMakeFiles/Neo_Exos.dir/exos.cpp.o: ../dataParse.hpp
 CMakeFiles/Neo_Exos.dir/exos.cpp.o: ../dynamics.h
 CMakeFiles/Neo_Exos.dir/exos.cpp.o: ../exos.cpp
 CMakeFiles/Neo_Exos.dir/exos.cpp.o: ../exos.h

@@ -12,7 +12,9 @@ CMakeFiles/Neo_Exos.dir/exos.cpp.o
  /home/yc/CLionProjects/Neo_Exos/PID.h
  /home/yc/CLionProjects/Neo_Exos/Unit.h
  /home/yc/CLionProjects/Neo_Exos/Utils.h
+ /home/yc/CLionProjects/Neo_Exos/csvReader.hpp
  /home/yc/CLionProjects/Neo_Exos/dataDecode.h
+ /home/yc/CLionProjects/Neo_Exos/dataParse.hpp
  /home/yc/CLionProjects/Neo_Exos/dynamics.h
  /home/yc/CLionProjects/Neo_Exos/exos.cpp
  /home/yc/CLionProjects/Neo_Exos/exos.h

@@ -20,7 +20,17 @@ cmath
 Eigen/Dense
 -
 
+/home/yc/CLionProjects/Neo_Exos/csvReader.hpp
+fstream
+-
+string
+-
+sstream
+-
+
 /home/yc/CLionProjects/Neo_Exos/dataDecode.h
+
+/home/yc/CLionProjects/Neo_Exos/dataParse.hpp
 
 /home/yc/CLionProjects/Neo_Exos/dynamics.h
 cmath
@@ -37,6 +47,10 @@ exos.h
 /home/yc/CLionProjects/Neo_Exos/exos.h
 dataDecode.h
 /home/yc/CLionProjects/Neo_Exos/dataDecode.h
+csvReader.hpp
+/home/yc/CLionProjects/Neo_Exos/csvReader.hpp
+dataParse.hpp
+/home/yc/CLionProjects/Neo_Exos/dataParse.hpp
 LowPassFilter.hpp
 /home/yc/CLionProjects/Neo_Exos/LowPassFilter.hpp
 

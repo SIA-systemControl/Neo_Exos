@@ -58,7 +58,6 @@
 //#define Sit2Stand_mode
 
 #define TASK_FREQUENCY 1000.0 // Hz
-#define TARGET_VELOCITY 100 // PUU (Synapticon default PUU is rpm)
 
 /* NOTICE:
  * Change TASK_FREQUENCY to higher value (4kHz++) may cause losing heartbeats
@@ -90,35 +89,24 @@
 #define r_ankle 0
 
 /** ------ Left Part ----- **/
-//TODO: adjust to positive number
-
-/**
- * r_hip   =>31931
-    r_knee  =>899085
-    r_ankle =>-61781
-    l_hip   =>143805
-    l_knee  =>39082
-    l_ankle =>104080
- */
-
-#define left_hip_init_motor_cnt 84325
-#define left_hip_init_spring_cnt 1799
-
-#define left_knee_init_motor_cnt 113400
-#define left_knee_init_spring_cnt 2701
-
-#define left_ankle_init_motor_cnt 100307
-#define left_ankle_init_spring_cnt 1101
-
-/** ------ Right Part ----- **/
-#define right_hip_init_motor_cnt -37072
-#define right_hip_init_spring_cnt 1313
-
-#define right_knee_init_motor_cnt -22099
-#define right_knee_init_spring_cnt 244
-
-#define right_ankle_init_motor_cnt -2584
-#define right_ankle_init_spring_cnt 3977
+//#define left_hip_init_motor_cnt 29976
+//#define left_hip_init_spring_cnt 1800
+//
+//#define left_knee_init_motor_cnt 94502
+//#define left_knee_init_spring_cnt 2702
+//
+//#define left_ankle_init_motor_cnt 76454
+//#define left_ankle_init_spring_cnt 1101
+//
+///** ------ Right Part ----- **/
+//#define right_hip_init_motor_cnt -33125
+//#define right_hip_init_spring_cnt 1312
+//
+//#define right_knee_init_motor_cnt -51846
+//#define right_knee_init_spring_cnt 244
+//
+//#define right_ankle_init_motor_cnt -59505
+//#define right_ankle_init_spring_cnt 3977
 
 #ifdef Tracking_Impendance
 
@@ -704,6 +692,40 @@ int pause_to_continue() {
     if (tcsetattr(fd, TCSANOW, &tm_old) < 0)
         return -1;
     return c;
+}
+
+// =========== Data Structure ============
+class AccData{
+public:
+    AccData();
+    AccData(double freq);
+    double update(double input);
+    double get() const;
+    double getOld() const;
+
+private:
+    double old_data;
+    double acc;
+    double freq;
+};
+
+AccData::AccData():old_data(0),acc(0),freq(0.001) {}
+
+AccData::AccData(double freq) :old_data(0),acc(0),freq(freq) {}
+
+double AccData::get() const {
+    return acc;
+}
+
+double AccData::getOld() const{
+    return old_data;
+}
+
+double AccData::update(double input) {
+    double res = (input - old_data)/freq;
+    old_data = input;
+    acc = res;
+    return res;
 }
 
 #endif //EXOS_IMPEDANCECONTROL_EXOS_H

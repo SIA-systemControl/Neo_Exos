@@ -107,7 +107,13 @@
 		<Unit filename="/home/yc/CLionProjects/Neo_Exos/Utils.h">
 			<Option target="Neo_Exos"/>
 		</Unit>
+		<Unit filename="/home/yc/CLionProjects/Neo_Exos/csvReader.hpp">
+			<Option target="Neo_Exos"/>
+		</Unit>
 		<Unit filename="/home/yc/CLionProjects/Neo_Exos/dataDecode.h">
+			<Option target="Neo_Exos"/>
+		</Unit>
+		<Unit filename="/home/yc/CLionProjects/Neo_Exos/dataParse.hpp">
 			<Option target="Neo_Exos"/>
 		</Unit>
 		<Unit filename="/home/yc/CLionProjects/Neo_Exos/dynamics.h">

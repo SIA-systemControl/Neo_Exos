@@ -9,7 +9,7 @@
 #include <Eigen/Dense>
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
 
-struct DiscretedMatrix{
+struct DiscretedMatrix {
     Eigen::Matrix3d Ad;
     Eigen::Vector3d Bd;
 };
@@ -49,7 +49,7 @@ public:
 
     Eigen::Vector3d Friction_motor(Eigen::Vector3d dtheta);
 
-    Eigen::Vector3d H_term(Eigen::Vector3d q,Eigen::Vector3d ddq);
+    Eigen::Vector3d H_term(Eigen::Vector3d q, Eigen::Vector3d ddq, Eigen::Vector3d ddtheta);
 
     Eigen::Vector3d
     coupling_dynamics(Eigen::Vector3d ddq, Eigen::Vector3d dq, Eigen::Vector3d q, Eigen::Vector3d ddtheta,
@@ -147,7 +147,8 @@ Eigen::Matrix<double, 3, 3> dynamics::Inertia_term(Eigen::Vector3d q) {
 
 }
 
-Eigen::Vector3d dynamics::H_term(Eigen::Vector3d q, Eigen::Vector3d ddq){
+Eigen::Vector3d dynamics::H_term(Eigen::Vector3d q, Eigen::Vector3d ddq, Eigen::Vector3d ddtheta) {
+    // (M + SBS)*ddq + S*ddtheta
     double q1 = q(0);
     double q2 = q(1);
     double q3 = q(2);
@@ -192,7 +193,7 @@ Eigen::Vector3d dynamics::H_term(Eigen::Vector3d q, Eigen::Vector3d ddq){
     Eigen::Matrix3d H;
     H = M + SBS;
 
-    return H*ddq;
+    return H * ddq + S * ddtheta;
 }
 
 Eigen::Vector3d dynamics::Coriolis_term(Eigen::Vector3d dq, Eigen::Vector3d q) {
@@ -338,8 +339,6 @@ dynamics::coupling_dynamics(Eigen::Vector3d ddq, Eigen::Vector3d dq, Eigen::Vect
 
     Eigen::Vector3d tau_m;
     tau_m = (H + S.transpose()) * ddq + (S + B) * ddtheta + Coriolis + Gravity + friction_m;
-//    tau_m = (H + S.transpose()) * ddq_l + (S + B) * ddtheta + Coriolis + Gravity + friction_l;
-
 //    tau_m = H * ddq;
 
     return tau_m;
@@ -703,7 +702,7 @@ dynamics::feedforward_dynamics(Eigen::Vector3d d4q, Eigen::Vector3d d3q, Eigen::
 
     tau_ff = Gravity + Friction_link(dq);
 
-    return tau_ff;
+    return ddtheta_d;
 }
 
 dynamics::dynamics(bool part) {
@@ -718,7 +717,7 @@ dynamics::dynamics(bool part) {
         lx3 = 0.1285;
         m1 = 2.1;
         m2 = 1.55;
-        m3 = 1.14 ;
+        m3 = 1.14;
         m1_r = 0.3;
         m2_r = 0.3;
         m3_r = 0.3;
@@ -732,7 +731,7 @@ dynamics::dynamics(bool part) {
         fc2_m = 2.7995;
         fv3_m = 0.0998;
         fc3_m = 3.2850;
-        L1 = 0.41;
+        L1 = 0.42;
         L2 = 0.4;
         Im1 = 0.33;
         Im2 = 0.24;
@@ -746,7 +745,7 @@ dynamics::dynamics(bool part) {
         lx3 = 0.1285;
         m1 = 2.1;
         m2 = 1.55;
-        m3 = 1.14 ;
+        m3 = 1.14;
         m1_r = 0.3;
         m2_r = 0.3;
         m3_r = 0.3;
@@ -760,7 +759,7 @@ dynamics::dynamics(bool part) {
         fc2_m = 2.6517;
         fv3_m = 0.0763;
         fc3_m = 3.2944;
-        L1 = 0.41;
+        L1 = 0.42;
         L2 = 0.4;
         Im1 = 0.33;
         Im2 = 0.24;
@@ -776,24 +775,24 @@ double dynamics::get_para() {
 DiscretedMatrix dynamics::Discretization(Eigen::Matrix3d A, Eigen::Vector3d B, double Ts) {
     DiscretedMatrix discretedMatrix;
     Eigen::MatrixXd A_exp;
-    A_exp = (A*Ts).exp();
+    A_exp = (A * Ts).exp();
     int nx = (B).rows();
-    int n =4;
-    double h = Ts/n;
+    int n = 4;
+    double h = Ts / n;
     int Coef = 2;
-    Eigen::Matrix3d Ai = Eigen::Matrix3d::Identity(nx,nx) + A_exp;
+    Eigen::Matrix3d Ai = Eigen::Matrix3d::Identity(nx, nx) + A_exp;
     Eigen::Vector3d Bd;
 
     for (int i = 1; i < n; i++) {
-        if(Coef == 2)
+        if (Coef == 2)
             Coef = 4;
         else
             Coef = 2;
 
-        Ai += Coef * (A*i*h).exp();
+        Ai += Coef * (A * i * h).exp();
     }
 
-    Bd = (h/3) * Ai * B;
+    Bd = (h / 3) * Ai * B;
 
     discretedMatrix.Ad = A_exp;
     discretedMatrix.Bd = Bd;

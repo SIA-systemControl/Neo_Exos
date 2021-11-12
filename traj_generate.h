@@ -38,6 +38,14 @@ double identify_velocity(int curve_count, double a0, const double* a, const doub
 
 double identify_acceleration(int curve_count, double a0, const double* a, const double* b ,double w);
 
+/**
+ * for dynamics verification
+ */
+
+double identify_3rd(int curve_count, double a0, const double* a, const double* b ,double w);
+
+double identify_4th(int curve_count, double a0, const double* a, const double* b ,double w);
+
 
 
 #endif //MATRIX_DYNAMICS_TRAJ_GENERATE_H

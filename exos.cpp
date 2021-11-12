@@ -7,12 +7,15 @@
 //  (3) adjust driver FOC configuration to obtain better position control performance in CSP_tracking case
 //  (4) try Noload_case with variable Period P ---> [OK]
 //  (5) solve feedback velocity noise. ---> [OK]
-//  (6) added startup checking for r_ankle 2ed encoder (detect 0 cnt case)
+//  (6) added startup checking for r_ankle 2ed encoder (detect 0 cnt case) ---> [OK}
+//  (7) fixed manual calibration of init_cnt, using csv file instead.
 //
 
 #include <iomanip>
 #include "exos.h"
 #include "dataDecode.h"
+#include "csvReader.hpp"
+#include "dataParse.hpp"
 
 #include "LowPassFilter.hpp"
 
@@ -24,6 +27,7 @@ std::vector<unsigned int> error_code_sequence;
 //extern volatile bool FLG_BODY_BEND; //body bend indicator
 extern int P_update;
 
+bool FLG_INIT_FILE_WRITEN = false;
 bool FLG_pthread_online = true;
 bool EtherCAT_ONLINE = true;
 bool POST_RESET = false;
@@ -45,7 +49,7 @@ std::ofstream right_outFile;
 std::ofstream right_velFile;
 std::ofstream right_save_file;
 
-
+std::ofstream init_cnt_data;
 std::ofstream gaitData;
 
 /**
@@ -71,7 +75,7 @@ PID_position r_Ankle_pd(0, 0, 0);
 Eigen::Vector3d d4q_r, d3q_r, ddq_r, dq_r, q_r;
 Eigen::Vector3d dq_e_r, q_e_r;
 
-Eigen::Vector3d dtheta_r, theta_r, dtheta_l, theta_l;
+Eigen::Vector3d ddtheta_r, dtheta_r, theta_r, ddtheta_l, dtheta_l, theta_l;
 
 dynamics right_SEA_dynamics(right);
 
@@ -93,9 +97,8 @@ Eigen::IOFormat PrettyPrint(4, 0, ",", "\n", "[", "]", "[", "]");
 
 double freq = 1;
 
-LowPassFilter lpf(4, 0.001);
-LowPassFilter lpf_l(2, 0.001);
-
+LowPassFilter vel_lpf(3, 0.001);
+LowPassFilter acc_lpf(2, 0.001);
 
 static int SIG_cnt = 0;
 
@@ -111,6 +114,30 @@ static int time_cnt = 0;
 
 int task_cmd = 0;
 
+AccData hip_acc(1 / TASK_FREQUENCY), knee_acc(1 / TASK_FREQUENCY), ankle_acc(1 / TASK_FREQUENCY);
+AccData hip_acc_m(1 / TASK_FREQUENCY), knee_acc_m(1 / TASK_FREQUENCY), ankle_acc_m(1 / TASK_FREQUENCY);
+
+/** ------ Right Part ----- **/
+int left_hip_init_motor_cnt;
+int left_hip_init_spring_cnt;
+
+int left_knee_init_motor_cnt;
+int left_knee_init_spring_cnt;
+
+int left_ankle_init_motor_cnt;
+int left_ankle_init_spring_cnt;
+
+/** ------ Right Part ----- **/
+int right_hip_init_motor_cnt;
+int right_hip_init_spring_cnt;
+
+int right_knee_init_motor_cnt;
+int right_knee_init_spring_cnt;
+
+int right_ankle_init_motor_cnt;
+int right_ankle_init_spring_cnt;
+
+init_cnt initCnt;
 
 static void SIG_handle(int sig) {
     if (sig == SIGINT) {
@@ -193,6 +220,38 @@ void *robotcontrol(void *arg) {
 
     gaitData.open("gaitData.csv", std::ios::out);
 
+    if (task_cmd == 6) { // taskFSM == checking
+        init_cnt_data.open("init_cnt.csv", std::ios::out);
+        init_cnt_data << "r_hip_m" << ',' << "r_hip_s" << ',' << "r_knee_m" << ',' << "r_knee_s" << ','
+                      << "r_ankle_m" << ',' << "r_ankle_s" << ',' << "l_hip_m" << ',' << "l_hip_s" << ','
+                      << "l_knee_m" << ',' << "l_knee_s" << ',' << "l_ankle_m" << "l_ankle_s" << std::endl;
+    } else { // other taskFSM
+        const char *path = "init_cnt.csv";
+        csvReader csvReader(path);
+
+        int ret = csvReader.readLine();
+        while (!csvReader.readLine()) {
+            initCnt = set_init_cnt(csvReader.data);
+            left_hip_init_motor_cnt = initCnt.l_hip_m;
+            left_hip_init_spring_cnt = initCnt.l_hip_s;
+
+            left_knee_init_motor_cnt = initCnt.l_knee_m;
+            left_knee_init_spring_cnt = initCnt.l_knee_s;
+
+            left_ankle_init_motor_cnt = initCnt.l_ankle_m;
+            left_ankle_init_spring_cnt = initCnt.l_ankle_s;
+
+            right_hip_init_motor_cnt = initCnt.r_hip_m;
+            right_hip_init_spring_cnt = initCnt.r_hip_s;
+
+            right_knee_init_motor_cnt = initCnt.r_knee_m;
+            right_knee_init_spring_cnt = initCnt.r_knee_s;
+
+            right_ankle_init_motor_cnt = initCnt.r_ankle_m;
+            right_ankle_init_spring_cnt = initCnt.r_ankle_s;
+        }
+    }
+
     GaitMatrix << 1, 1, 1, 1;
     gMFSM.m_gaitMatrixFsm = Stance;
 
@@ -222,6 +281,7 @@ void *robotcontrol(void *arg) {
     right_filter_file.close();
 
     gaitData.close();
+    init_cnt_data.close();
 
     pthread_exit(nullptr);
 }
@@ -283,7 +343,7 @@ void cyclic_task(int task_Cmd) {
                                 int E_code = EC_READ_U16(domainTx_pd + offset.Error_code[i]);
 
                                 if (E_code != 0 || (EC_READ_U16(domainTx_pd + offset.status_word[i]) & 0x0008)) {
-                                    std::cout << "[Error] occured at slave: " << i << std::endl;
+                                    std::cout << "[Error: exception occured at slave: [" << i << ']' << std::endl;
                                     EC_WRITE_U16(domainRx_pd + offset.ctrl_word[i],
                                                  (EC_READ_U16(domainTx_pd + offset.status_word[i]) |
                                                   0x0080));
@@ -401,17 +461,13 @@ void cyclic_task(int task_Cmd) {
 
             int cnt_spring_3 = EC_READ_S32(domainTx_pd + offset.second_position[r_hip]);
 
-//            if (task_Cmd != 2) { // if running CSP mode, avoid encoder cnt mismatch
-//                while (cnt_motor_1 < 0)
-//                    cnt_motor_1 += 131072;
-//                while (cnt_motor_2 < 0)
-//                    cnt_motor_2 += 131072;
-//                while (cnt_motor_3 < 0)
-//                    cnt_motor_3 += 131072;
-//            }
-
             if (cnt_spring_3 < 0)
                 cnt_spring_3 += 4096;
+
+            if (cnt_spring_3 == 0) {
+                std::cout << "[Warning: Checking cable connection of r_ankle spring encoder!]" << std::endl;
+                pause_to_continue();
+            }
 
 
             int RPM_spring_3 = EC_READ_S32(domainTx_pd + offset.second_velocity[r_hip]);
@@ -508,9 +564,9 @@ void cyclic_task(int task_Cmd) {
             double lever_arm_2_vel = vel_RPM2rad(RPM_motor_2 / transmission_knee);
             double lever_arm_3_vel = vel_RPM2rad(RPM_motor_3 / transmission_hip);
 
-            double spring_1_vel = lpf.update((float) vel_RPM2rad(RPM_spring_1));
-            double spring_2_vel = lpf.update((float) vel_RPM2rad(RPM_spring_2));
-            double spring_3_vel = lpf_l.update((float) vel_RPM2rad(RPM_spring_3));
+            double spring_1_vel = vel_lpf.update((float) vel_RPM2rad(RPM_spring_1));
+            double spring_2_vel = vel_lpf.update((float) vel_RPM2rad(RPM_spring_2));
+            double spring_3_vel = vel_lpf.update((float) vel_RPM2rad(RPM_spring_3));
 
             double link_1_vel = lever_arm_1_vel - spring_1_vel;
             double link_2_vel = lever_arm_2_vel - spring_2_vel;
@@ -541,9 +597,9 @@ void cyclic_task(int task_Cmd) {
             double lever_arm_5_vel = vel_RPM2rad(RPM_motor_5 / transmission_knee);
             double lever_arm_6_vel = vel_RPM2rad(RPM_motor_6 / transmission_ankle);
 
-            double spring_4_vel = lpf_l.update((float) vel_RPM2rad(RPM_spring_4));
-            double spring_5_vel = lpf_l.update((float) vel_RPM2rad(RPM_spring_5));
-            double spring_6_vel = lpf_l.update((float) vel_RPM2rad(RPM_spring_6));
+            double spring_4_vel = vel_lpf.update((float) vel_RPM2rad(RPM_spring_4));
+            double spring_5_vel = vel_lpf.update((float) vel_RPM2rad(RPM_spring_5));
+            double spring_6_vel = vel_lpf.update((float) vel_RPM2rad(RPM_spring_6));
 
             double link_4_vel = lever_arm_4_vel - spring_4_vel;
             double link_5_vel = lever_arm_5_vel - spring_5_vel;
@@ -568,6 +624,24 @@ void cyclic_task(int task_Cmd) {
             double l_knee_m_rad = lever_arm_5_rad;
             double l_ankle_m_rad = lever_arm_6_rad;
 
+            double l_hip_acc = hip_acc.update(l_hip_vel);
+            l_hip_acc = acc_lpf.update((float) l_hip_acc);
+
+            double l_hip_acc_m = hip_acc_m.update(l_hip_m_vel);
+            l_hip_acc_m = acc_lpf.update((float) l_hip_acc_m);
+
+            double l_knee_acc = hip_acc.update(l_knee_vel);
+            l_knee_acc = acc_lpf.update((float) l_knee_acc);
+
+            double l_knee_acc_m = hip_acc_m.update(l_knee_m_vel);
+            l_knee_acc_m = acc_lpf.update((float) l_knee_acc_m);
+
+            double l_ankle_acc = hip_acc.update(l_ankle_vel);
+            l_ankle_acc = acc_lpf.update((float) l_ankle_acc);
+
+            double l_ankle_acc_m = hip_acc_m.update(l_ankle_m_vel);
+            l_ankle_acc_m = acc_lpf.update((float) l_ankle_acc_m);
+
             /**
              * thousand ratio of rated torque
              */
@@ -590,19 +664,35 @@ void cyclic_task(int task_Cmd) {
                                   << r_ankle_vel << " [rad/s]"
                                   << std::endl;
 
-                        std::cout << "spr cnt: " << std::endl;
-                        std::cout << cnt_spring_4 << std::endl;
-                        std::cout << cnt_spring_5 << std::endl;
-                        std::cout << cnt_spring_6 << std::endl;
-                        std::cout << "motor cnt:" << std::endl;
-                        std::cout << cnt_motor_4 << std::endl;
-                        std::cout << cnt_motor_5 << std::endl;
-                        std::cout << cnt_motor_6 << std::endl;
+                        std::cout << "---------------------" << std::endl;
+                        std::cout << "       spr cnt: " << std::endl;
+                        std::cout << "---------------------" << std::endl;
+                        std::cout << "r_hip   =>" << cnt_spring_3 << std::endl;
+                        std::cout << "r_knee  =>" << cnt_spring_2 << std::endl;
+                        std::cout << "r_ankle =>" << cnt_spring_1 << std::endl;
+                        std::cout << "l_hip   =>" << cnt_spring_4 << std::endl;
+                        std::cout << "l_knee  =>" << cnt_spring_5 << std::endl;
+                        std::cout << "l_ankle =>" << cnt_spring_6 << std::endl;
 
-                        std::cout << "link_rad: " << std::endl;
-                        std::cout << std::setprecision(3) << l_hip_rad << std::endl;
-                        std::cout << std::setprecision(3) << l_knee_rad << std::endl;
-                        std::cout << std::setprecision(3) << l_ankle_rad << std::endl;
+                        std::cout << "---------------------" << std::endl;
+                        std::cout << "      motor cnt:" << std::endl;
+                        std::cout << "---------------------" << std::endl;
+                        std::cout << "r_hip   =>" << cnt_motor_3 << std::endl;
+                        std::cout << "r_knee  =>" << cnt_motor_2 << std::endl;
+                        std::cout << "r_ankle =>" << cnt_motor_1 << std::endl;
+                        std::cout << "l_hip   =>" << cnt_motor_4 << std::endl;
+                        std::cout << "l_knee  =>" << cnt_motor_5 << std::endl;
+                        std::cout << "l_ankle =>" << cnt_motor_6 << std::endl;
+
+                        std::cout << "---------------------" << std::endl;
+                        std::cout << "calibrated link_rad: " << std::endl;
+                        std::cout << "---------------------" << std::endl;
+                        std::cout << std::setprecision(3) << "r_hip   = " << r_hip_rad << std::endl;
+                        std::cout << std::setprecision(3) << "r_knee  = " << r_knee_rad << std::endl;
+                        std::cout << std::setprecision(3) << "r_ankle = " << r_ankle_rad << std::endl;
+                        std::cout << std::setprecision(3) << "l_hip   = " << l_hip_rad << std::endl;
+                        std::cout << std::setprecision(3) << "l_knee  = " << l_knee_rad << std::endl;
+                        std::cout << std::setprecision(3) << "l_ankle = " << l_ankle_rad << std::endl;
 
 
                         for (int i = 0; i < active_num; i++) {
@@ -718,6 +808,9 @@ void cyclic_task(int task_Cmd) {
                             if (SIG_cnt == 0) {
                                 gTaskFsm.m_gtaskFSM = TaskFSM(task_Cmd);
 
+//                                if (gTaskFsm.m_gtaskFSM != task_working_Checking)
+//                                    pause_to_continue();
+
                                 std::cout << "switch to FMS: " << gTaskFsm.m_gtaskFSM << std::endl;
 
                                 reset_step = 0;
@@ -733,7 +826,7 @@ void cyclic_task(int task_Cmd) {
                 }
                     break;
 
-                case task_working_Control: { //TODO: ABORT CASE!!! ONLY USED FOR REFERENCE.
+                case task_working_Control: { //TODO: ABORT CASE!!! ONLY USED FOR CODE REFERENCE.
 
                     unsigned int An_Left_1 = EC_READ_U16(domainTx_pd + offset.analog_in1[l_hip]);
                     unsigned int An_Left_2 = EC_READ_U16(domainTx_pd + offset.analog_in2[l_hip]);
@@ -1296,17 +1389,23 @@ void cyclic_task(int task_Cmd) {
                     }
 
 
+                    // =============================  rad  ====================================
+
                     double Identify_hip_rad = 0.6 * identify_position(curve_cnt, i_a0_hip, i_a_hip, i_b_hip, i_w_hip);
                     double Identify_knee_rad =
                             0.8 * identify_position(curve_cnt, i_a0_knee, i_a_knee, i_b_knee, i_w_knee);
                     double Identify_ankle_rad = 0.6 * identify_position(curve_cnt, i_a0_ankle, i_a_ankle, i_b_ankle,
                                                                         i_w_ankle) - 0.57;
 
+                    // ==============================  vel  ===========================================
+
                     double Identify_hip_vel = 0.6 * identify_velocity(curve_cnt, i_a0_hip, i_a_hip, i_b_hip, i_w_hip);
                     double Identify_knee_vel =
                             0.8 * identify_velocity(curve_cnt, i_a0_knee, i_a_knee, i_b_knee, i_w_knee);
                     double Identify_ankle_vel =
                             0.6 * identify_velocity(curve_cnt, i_a0_ankle, i_a_ankle, i_b_ankle, i_w_ankle);
+
+                    // ==============================  acc  ==========================================
 
                     double Identify_hip_acc =
                             0.6 * identify_acceleration(curve_cnt, i_a0_hip, i_a_hip, i_b_hip, i_w_hip);
@@ -1315,6 +1414,33 @@ void cyclic_task(int task_Cmd) {
                     double Identify_ankle_acc =
                             0.6 * identify_acceleration(curve_cnt, i_a0_ankle, i_a_ankle, i_b_ankle, i_w_ankle);
 
+                    // ===============================  3rd  =========================================
+
+                    double Identify_hip_3rd =
+                            0.6 * identify_3rd(curve_cnt, i_a0_hip, i_a_hip, i_b_hip, i_w_hip);
+
+                    double Identify_knee_3rd =
+                            0.8 * identify_3rd(curve_cnt, i_a0_knee, i_a_knee, i_b_knee, i_w_knee);
+
+                    double Identify_ankle_3rd =
+                            0.6 * identify_3rd(curve_cnt, i_a0_ankle, i_a_ankle, i_b_ankle, i_w_ankle);
+
+                    // ===============================  4th  =========================================
+
+                    double Identify_hip_4th =
+                            0.6 * identify_4th(curve_cnt, i_a0_hip, i_a_hip, i_b_hip, i_w_hip);
+
+                    double Identify_knee_4th =
+                            0.8 * identify_4th(curve_cnt, i_a0_knee, i_a_knee, i_b_knee, i_w_knee);
+
+                    double Identify_ankle_4th =
+                            0.6 * identify_4th(curve_cnt, i_a0_ankle, i_a_ankle, i_b_ankle, i_w_ankle);
+
+                    Eigen::Matrix3d Ks_l;
+
+                    Ks_l << 120, 0, 0,
+                            0, 200, 0,
+                            0, 0, 110;
 
 //                    // Right Part
 //                    int Identify_hip_cnt =
@@ -1351,9 +1477,14 @@ void cyclic_task(int task_Cmd) {
                     theta_l << l_hip_m_rad, l_knee_m_rad, l_ankle_m_rad;
                     dtheta_l << l_hip_m_vel, l_knee_m_vel, l_ankle_m_vel;
 
+                    d4q_l << Identify_hip_4th, Identify_knee_4th, Identify_ankle_4th;
+                    d3q_l << Identify_hip_3rd, Identify_knee_3rd, Identify_ankle_3rd;
+
+                    ddtheta_l = left_SEA_dynamics.feedforward_dynamics(d4q_l, d3q_l, ddq_l, dq_l, q_l, Ks_l);
+
                     Eigen::Vector3d Dyn_right, Dyn_left; // torque after reducer
                     Dyn_right = right_SEA_dynamics.coupling_dynamics(ddq_r, dq_r, q_r, ddq_r, dtheta_r);
-                    Dyn_left = left_SEA_dynamics.coupling_dynamics(ddq_l, dq_l, q_l, ddq_l, dtheta_l);
+                    Dyn_left = left_SEA_dynamics.coupling_dynamics(ddq_l, dq_l, q_l, ddtheta_l, dtheta_l);
 
 //                    EC_WRITE_S32(domainRx_pd + offset.target_position[r_hip], Identify_hip_cnt);
 //                    EC_WRITE_S32(domainRx_pd + offset.target_position[r_knee], Identify_knee_cnt);
@@ -1393,6 +1524,7 @@ void cyclic_task(int task_Cmd) {
                                   << r_knee_m_vel << ',' << r_ankle_m_vel << ',' << tau_mot_4 << ',' << tau_mot_5 << ','
                                   << tau_mot_6 << std::endl;
 
+
                     left_outFile << Identify_hip_rad << ',' << Identify_knee_rad << ',' << Identify_ankle_rad << ','
                                  << l_hip_rad << ',' << l_knee_rad << ',' << l_ankle_rad << ',' << l_hip_m_rad << ','
                                  << l_knee_m_rad << ',' << l_ankle_m_rad << ',' << tau_mot_4 << ',' << tau_mot_5 << ','
@@ -1401,12 +1533,8 @@ void cyclic_task(int task_Cmd) {
 
                     left_velFile << Identify_hip_vel << ',' << Identify_knee_vel << ',' << Identify_ankle_vel << ','
                                  << l_hip_vel << ',' << l_knee_vel << ',' << l_ankle_vel << ',' << l_hip_m_vel << ','
-                                 << l_knee_m_vel << ',' << l_ankle_m_vel << ',' << tau_mot_4 << ',' << tau_mot_5 << ','
-                                 << tau_mot_6 << std::endl;
-
-                    right_save_file << Identify_hip_cnt << ',' << Identify_knee_cnt << ',' << Identify_ankle_cnt
-                                    << std::endl;
-
+                                 << l_knee_m_vel << ',' << l_ankle_m_vel << ',' << ddtheta_l(0) << ',' << ddtheta_l(1)
+                                 << ',' << ddtheta_l(2) << std::endl;
                 }
                     break;
 
@@ -1453,19 +1581,25 @@ void cyclic_task(int task_Cmd) {
                         double ankle_ref_acc_r =
                                 1.0 * differentia_2ed_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
 
-                        double hip_ref_3rd_r =
-                                0.6 * differentia_3rd_Fourier_8th(Gc_main, a_hip, b_hip, w_hip, a0_hip, P_main);
-                        double knee_ref_3rd_r =
-                                0.6 * differentia_3rd_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
-                        double ankle_ref_3rd_r =
-                                1.0 * differentia_3rd_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
 
+                        // ==================== 3rd ====================
+                        double hip_ref_3rd_r =
+                                0.8 * differentia_3rd_Fourier_8th(Gc_main, a_hip, b_hip, w_hip, a0_hip, P_main);
+                        double knee_ref_3rd_r =
+                                0.8 * differentia_3rd_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
+                        double ankle_ref_3rd_r =
+                                differentia_3rd_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
+
+                        // ==================== 4th ====================
                         double hip_ref_4th_r =
-                                0.6 * differentia_4th_Fourier_8th(Gc_main, a_hip, b_hip, w_hip, a0_hip, P_main);
+                                0.8 * differentia_4th_Fourier_8th(Gc_main, a_hip, b_hip, w_hip, a0_hip, P_main);
+
                         double knee_ref_4th_r =
-                                0.6 * differentia_4th_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
+                                0.8 * differentia_4th_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
+
                         double ankle_ref_4th_r =
-                                1.0 * differentia_4th_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
+                                differentia_4th_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
+
 
                         if (FLG_RIGHT_GC_1st) {
                             if (!FLG_LEFT_GC_1st) {
@@ -1507,27 +1641,32 @@ void cyclic_task(int task_Cmd) {
                         double Ankle_ref_acc_l =
                                 differentia_2ed_Fourier_8th(Gc_sub, a_ankle, b_ankle, w_ankle, a0_ankle, P_sub);
 
+                        // ==================== 3rd ====================
+
                         double hip_ref_3rd_l =
-                                0.6 * differentia_3rd_Fourier_8th(Gc_sub, a_hip, b_hip, w_hip, a0_hip, P_sub);
+                                0.8 * differentia_3rd_Fourier_8th(Gc_sub, a_hip, b_hip, w_hip, a0_hip, P_sub);
                         double knee_ref_3rd_l =
-                                0.6 * differentia_3rd_Fourier_8th(Gc_sub, a_knee, b_knee, w_knee, a0_knee, P_sub);
-                        double Ankle_ref_3rd_l =
+                                0.8 * differentia_3rd_Fourier_8th(Gc_sub, a_knee, b_knee, w_knee, a0_knee, P_sub);
+                        double ankle_ref_3rd_l =
                                 differentia_3rd_Fourier_8th(Gc_sub, a_ankle, b_ankle, w_ankle, a0_ankle, P_sub);
 
+                        // ==================== 4th ====================
+
                         double hip_ref_4th_l =
-                                0.6 * differentia_4th_Fourier_8th(Gc_sub, a_hip, b_hip, w_hip, a0_hip, P_sub);
+                                0.8 * differentia_4th_Fourier_8th(Gc_sub, a_hip, b_hip, w_hip, a0_hip, P_sub);
                         double knee_ref_4th_l =
-                                0.6 * differentia_4th_Fourier_8th(Gc_sub, a_knee, b_knee, w_knee, a0_knee, P_sub);
-                        double Ankle_ref_4th_l =
+                                0.8 * differentia_4th_Fourier_8th(Gc_sub, a_knee, b_knee, w_knee, a0_knee, P_sub);
+                        double ankle_ref_4th_l =
                                 differentia_4th_Fourier_8th(Gc_sub, a_ankle, b_ankle, w_ankle, a0_ankle, P_sub);
+
 
                         Eigen::Matrix3d Ks_r, Ks_l;
 
                         //TODO: the Ks-matirx is the diagonal matrix and the non-zero elements are the stiffness of spring
-                        //      Here is an estimate of spring,
+                        //      Here is an estimate of spring, ( LS approximation )
                         //      the accuracy will be improved with load increase during identification experiment
 
-                        Ks_r << 178, 0, 0,
+                        Ks_r << 150, 0, 0,
                                 0, 200, 0,
                                 0, 0, 135;
 
@@ -1539,30 +1678,29 @@ void cyclic_task(int task_Cmd) {
 
 #ifdef Tracking_Impendance
 
-                        K_r << 60, 60, 20;
-                        B_r << 0.3, 0.2, 1; // 0.6 0.6 0.50
+                        K_r << 60, 60, 30;
+                        B_r << 0.2, 0.2, 1; // 0.6 0.6 0.50
 
                         K_l << 60, 60, 30;
-                        B_l << 0.1, 0.2, 0.8; // 0.6 0.6 0.5
+                        B_l << 0.2, 0.2, 0.8; // 0.6 0.6 0.5
 
                         d4q_r << hip_ref_4th_r, knee_ref_4th_r, ankle_ref_4th_r;
                         d3q_r << hip_ref_3rd_r, knee_ref_3rd_r, ankle_ref_3rd_r;
                         ddq_r << hip_ref_acc_r, (knee_ref_acc_r), (ankle_ref_acc_r);
                         dq_r << r_hip_vel, r_knee_vel, r_ankle_vel;
                         q_r << r_hip_rad, r_knee_rad, r_ankle_rad;
-
                         dq_e_r << hip_ref_vel_r - r_hip_vel, (knee_ref_vel_r - r_knee_vel), (ankle_ref_vel_r -
                                                                                              r_ankle_vel);
                         q_e_r << hip_ref_rad_r - r_hip_rad, (knee_ref_rad_r - r_knee_rad), (ankle_ref_rad_r -
                                                                                             r_ankle_rad);
 
+                        ddtheta_r << right_SEA_dynamics.feedforward_dynamics(d4q_r, d3q_r, ddq_r, dq_r, q_r, Ks_r);
                         dtheta_r << r_hip_m_vel, r_knee_m_vel, r_ankle_m_vel;
 
                         //left part =>
-                        d4q_l << hip_ref_4th_l, knee_ref_4th_l, Ankle_ref_4th_l;
-                        d3q_l << hip_ref_3rd_l, knee_ref_3rd_l, Ankle_ref_3rd_l;
+                        d4q_l << hip_ref_4th_l, knee_ref_4th_l, ankle_ref_4th_l;
+                        d3q_l << hip_ref_3rd_l, knee_ref_3rd_l, ankle_ref_3rd_l;
                         ddq_l << hip_ref_acc_l, (knee_ref_acc_l), (Ankle_ref_acc_l);
-
                         dq_l << l_hip_vel, (l_knee_vel), (l_ankle_vel);
                         q_l << l_hip_rad, (l_knee_rad), (l_ankle_rad);
 
@@ -1570,13 +1708,17 @@ void cyclic_task(int task_Cmd) {
                                                                                              l_ankle_vel);
                         q_e_l << hip_ref_rad_l - l_hip_rad, (knee_ref_rad_l - l_knee_rad), (Ankle_ref_rad_l -
                                                                                             l_ankle_rad);
+
+                        ddtheta_l = left_SEA_dynamics.feedforward_dynamics(d4q_l, d3q_l, ddq_l, dq_l, q_l, Ks_l);
+                        dtheta_l << l_hip_m_vel, l_knee_m_vel, l_ankle_m_vel;
+
 #endif
 
 #ifdef Drag_Impendance
                         K_r << 0, 0, 0;
                         K_l << 0, 0, 0;
-                        B_r << 0.1, 0.1, 0.2;
-                        B_l << 0.2, 0.2, 0.2;
+                        B_r << 0.1, 0.1, 0.1;
+                        B_l << 0.2, 0.2, 0.1;
 
                         d4q_l << 0, 0, 0;
                         d3q_l << 0, 0, 0;
@@ -1584,8 +1726,7 @@ void cyclic_task(int task_Cmd) {
                         dq_l << 0, (0), (0);
                         q_l << l_hip_rad, l_knee_rad, l_ankle_rad;
                         dq_e_l << (0 - l_hip_vel), (0 - l_knee_vel), (0 - l_ankle_vel);
-                        q_e_l << 0 - l_hip_rad, (knee_ref_rad_l - l_knee_rad), (Ankle_ref_rad_l -
-                                                                                l_ankle_rad);
+                        q_e_l << 0 - l_hip_rad, (0 - l_knee_rad), (0 - l_ankle_rad);
 
                         d4q_r << 0, 0, 0;
                         d3q_r << 0, 0, 0;
@@ -1601,31 +1742,38 @@ void cyclic_task(int task_Cmd) {
                         Eigen::Vector3d G_term_r, C_term_r, F_term_r, H_term_r;
                         C_term_r = right_SEA_dynamics.Coriolis_term(dq_r, q_r);
                         F_term_r = right_SEA_dynamics.Friction_motor(dtheta_r);
-                        H_term_r = right_SEA_dynamics.H_term(q_r, ddq_r);
+                        H_term_r = right_SEA_dynamics.H_term(q_r, ddq_r, ddtheta_r);
                         G_term_r = right_SEA_dynamics.Gravity_term(q_r);
 
                         Eigen::Vector3d G_term_l, C_term_l, F_term_l, H_term_l;
                         C_term_l = left_SEA_dynamics.Coriolis_term(dq_l, q_l);
                         F_term_l = left_SEA_dynamics.Friction_motor(dtheta_l);
-                        H_term_l = left_SEA_dynamics.H_term(q_l,
-                                                            ddq_l);  // H_term now is based on ideal trajectory not actual
+                        H_term_l = left_SEA_dynamics.H_term(q_l, ddq_l, ddtheta_l);
                         G_term_l = left_SEA_dynamics.Gravity_term(q_l);
 
                         //TODO: M_term is based on desired trajectory, not actual acc.
-                        Eigen::Matrix3d left_G_Select_matrix, left_H_Select_matrix; // diagonal matrix
-                        Eigen::Matrix3d right_G_Select_matrix, right_H_Select_matrix; // diagonal matrix
+                        Eigen::Matrix3d left_G_Select_matrix, left_H_Select_matrix, left_C_Select_matrix; // diagonal matrix
+                        Eigen::Matrix3d right_G_Select_matrix, right_H_Select_matrix, right_C_Select_matrix; // diagonal matrix
+
+#ifdef Tracking_Impendance
 
                         left_G_Select_matrix
                                 <<
                                 0.7, 0, 0,
-                                0, 0.8, 0,
-                                0, 0, 0.6;
+                                0, 0.7, 0,
+                                0, 0, 0.5;
 
                         left_H_Select_matrix
                                 <<
-                                1, 0, 0,
+                                0, 0, 0,
                                 0, 0, 0,
                                 0, 0, 0;
+
+                        left_C_Select_matrix
+                                <<
+                                0.7, 0, 0,
+                                0, 0.7, 0,
+                                0, 0, 0.5;
 
                         right_G_Select_matrix
                                 <<
@@ -1635,40 +1783,88 @@ void cyclic_task(int task_Cmd) {
 
                         right_H_Select_matrix
                                 <<
-                                0.8, 0, 0,
-                                0, 0.6, 0,
-                                0, 0, 0.3;
+                                0.4, 0, 0,
+                                0, 0, 0,
+                                0, 0, 0;
 
-                        compensation_l = left_G_Select_matrix * G_term_l + left_H_Select_matrix * H_term_l + C_term_l;
-                        compensation_r = right_G_Select_matrix * G_term_r + right_H_Select_matrix * H_term_r + C_term_r;
+                        right_C_Select_matrix
+                                <<
+                                0.7, 0, 0,
+                                0, 0.8, 0,
+                                0, 0, 0.6;
+#endif
 
-                        //TODO: (1) calculate avaliable acc of link
-                        //      (2) adjust scaling factor of compensation
-                        //      (3) zero-impedance mode
+#ifdef Drag_Impendance
+                        left_G_Select_matrix
+                                <<
+                                0.7, 0, 0,
+                                0, 0.8, 0,
+                                0, 0, 0.5;
 
-                        r_Hip_pd.pid_set_params(0.2, 0, 2);
-                        r_Knee_pd.pid_set_params(0.12, 0, 1.6);
+                        left_H_Select_matrix
+                                <<
+                                0, 0, 0,
+                                0, 0, 0,
+                                0, 0, 0;
+
+                        left_C_Select_matrix
+                                <<
+                                0, 0, 0,
+                                0, 0.8, 0,
+                                0, 0, 0.6;
+
+                        right_G_Select_matrix
+                                <<
+                                0.7, 0, 0,
+                                0, 0.7, 0,
+                                0, 0, 0.6;
+
+                        right_H_Select_matrix
+                                <<
+                                0.7, 0, 0,
+                                0, 0, 0,
+                                0, 0, 0;
+
+                        right_C_Select_matrix
+                                <<
+                                0, 0, 0,
+                                0, 0.7, 0,
+                                0, 0, 0.6;
+#endif
+
+                        compensation_l = left_G_Select_matrix * G_term_l + left_H_Select_matrix * H_term_l +
+                                         left_C_Select_matrix * C_term_l;
+                        compensation_r = right_G_Select_matrix * G_term_r + right_H_Select_matrix * H_term_r +
+                                         right_C_Select_matrix * C_term_r;
+
+                        //TODO: (1) calculate avaliable acc of link [!!!Not Available, but dynamics motor acc can be calculated]
+                        //      (2) adjust scaling factor of compensation ---> [Amostly OK]
+                        //      (3) zero-impedance mode ---> [OK]
+                        //      (4) vibration may caused by force-loop PD parameters
+
+                        r_Hip_pd.pid_set_params(0.12, 0, 2);
+                        r_Knee_pd.pid_set_params(0.12, 0, 1.2);
                         r_Ankle_pd.pid_set_params(0.3, 0, 1);
 
-                        l_Hip_pd.pid_set_params(0.2, 0, 2);
+                        l_Hip_pd.pid_set_params(0.12, 0, 2);
                         l_Knee_pd.pid_set_params(0.1, 0, 1);
-                        l_Ankle_pd.pid_set_params(0.5, 0, 0.3);
+                        l_Ankle_pd.pid_set_params(0.3, 0, 0.8);
 
 #ifdef Drag_Impendance
 
                         double r_hip_Impedance =
-                                1.0 * (G_term_r(0)) * (B_r(0) * dq_e_r(0) + K_r(0) * q_e_r(0));
+                                (compensation_r(0)) * (B_r(0) * dq_e_r(0) + K_r(0) * q_e_r(0));
                         double r_knee_Impedance =
-                                0.8 * (compensation_r(1)) + (B_r(1) * dq_e_r(1) + K_r(1) * q_e_r(1));
+                                (compensation_r(1)) + (B_r(1) * dq_e_r(1) + K_r(1) * q_e_r(1));
                         double r_ankle_Impedance =
-                                0.6 * (compensation_r(2)) + (B_r(2) * dq_e_r(2) + K_r(2) * q_e_r(2));
+                                (compensation_r(2)) + (B_r(2) * dq_e_r(2) + K_r(2) * q_e_r(2));
 
                         double l_hip_Impedance =
                                 (B_l(0) * dq_e_l(0) + K_l(0) * q_e_l(0));
                         double l_knee_Impedance =
-                                B_l(1) * dq_e_l(1) + K_l(1) * q_e_l(1);
+                                compensation_l(1) + B_l(1) * dq_e_l(1) + K_l(1) * q_e_l(1);
                         double l_ankle_Impedance =
-                                (B_l(2) * dq_e_l(2) + K_l(2) * q_e_l(2));
+                                compensation_l(2) + (B_l(2) * dq_e_l(2) + K_l(2) * q_e_l(2));
 #endif
 
 #ifdef Tracking_Impendance
@@ -1702,7 +1898,7 @@ void cyclic_task(int task_Cmd) {
                                 r_knee_Impedance, r_knee_tau_spr, 1.5);
 
                         double tau_pd_ankle_r = r_Ankle_pd.pid_control(
-                                r_ankle_Impedance, r_ankle_tau_spr, 0.9);
+                                r_ankle_Impedance, r_ankle_tau_spr, 1.2);
 
                         double tau_pd_hip_l = l_Hip_pd.pid_control(
                                 l_hip_Impedance, l_hip_tau_spr, 1.5);
@@ -1711,7 +1907,7 @@ void cyclic_task(int task_Cmd) {
                                 l_knee_Impedance, l_knee_tau_spr, 1.5);
 
                         double tau_pd_ankle_l = l_Ankle_pd.pid_control(
-                                l_ankle_Impedance, l_ankle_tau_spr, 0.9);
+                                l_ankle_Impedance, l_ankle_tau_spr, 1.2);
 
                         int tau_dyn_thousand_1 = tau_Nm2thousand(tau_pd_hip_r, 0.3);
                         int tau_dyn_thousand_2 = tau_Nm2thousand(tau_pd_knee_r, 0.3);
@@ -1739,9 +1935,9 @@ void cyclic_task(int task_Cmd) {
                                 EC_WRITE_S8(domainRx_pd + offset.operation_mode[l_knee], CST);
                                 EC_WRITE_S8(domainRx_pd + offset.operation_mode[l_ankle], CST);
                             }
-//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[l_hip], tau_dyn_thousand_4);
-//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[l_knee], tau_dyn_thousand_5);
-//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[l_ankle], tau_dyn_thousand_6);
+                            EC_WRITE_S16(domainRx_pd + offset.target_torque[l_hip], tau_dyn_thousand_4);
+                            EC_WRITE_S16(domainRx_pd + offset.target_torque[l_knee], tau_dyn_thousand_5);
+                            EC_WRITE_S16(domainRx_pd + offset.target_torque[l_ankle], tau_dyn_thousand_6);
                         }
 #endif
 
@@ -1749,6 +1945,7 @@ void cyclic_task(int task_Cmd) {
                         EC_WRITE_S8(domainRx_pd + offset.operation_mode[r_hip], CST);
                         EC_WRITE_S8(domainRx_pd + offset.operation_mode[r_knee], CST);
                         EC_WRITE_S8(domainRx_pd + offset.operation_mode[r_ankle], CST);
+                        // ================ Right Limb ===================
 //
                         EC_WRITE_S16(domainRx_pd + offset.target_torque[r_hip], tau_dyn_thousand_1);
                         EC_WRITE_S16(domainRx_pd + offset.target_torque[r_knee], tau_dyn_thousand_2);
@@ -1758,9 +1955,11 @@ void cyclic_task(int task_Cmd) {
                         EC_WRITE_S8(domainRx_pd + offset.operation_mode[l_knee], CST);
                         EC_WRITE_S8(domainRx_pd + offset.operation_mode[l_ankle], CST);
 
-//                        EC_WRITE_S16(domainRx_pd + offset.target_torque[l_hip], tau_dyn_thousand_4);
-//                        EC_WRITE_S16(domainRx_pd + offset.target_torque[l_knee], tau_dyn_thousand_5);
-//                        EC_WRITE_S16(domainRx_pd + offset.target_torque[l_ankle], tau_dyn_thousand_6);
+                        // ================ Left Limb ===================
+
+                        EC_WRITE_S16(domainRx_pd + offset.target_torque[l_hip], tau_dyn_thousand_4);
+                        EC_WRITE_S16(domainRx_pd + offset.target_torque[l_knee], tau_dyn_thousand_5);
+                        EC_WRITE_S16(domainRx_pd + offset.target_torque[l_ankle], tau_dyn_thousand_6);
 #endif
 
                         /** ----------------------------------------------------------------------------------- */
@@ -2182,10 +2381,20 @@ void cyclic_task(int task_Cmd) {
                             }
                         }
 
+
+                        if (!FLG_INIT_FILE_WRITEN) {
+                            init_cnt_data << cnt_motor_3 << ',' << cnt_spring_3 << ','
+                                          << cnt_motor_2 << ',' << cnt_spring_2 << ','
+                                          << cnt_motor_1 << ',' << cnt_spring_1 << ','
+                                          << cnt_motor_4 << ',' << cnt_spring_4 << ','
+                                          << cnt_motor_5 << ',' << cnt_spring_5 << ','
+                                          << cnt_motor_6 << ',' << cnt_spring_6 << std::endl;
+                            FLG_INIT_FILE_WRITEN = true;
+                        }
+
                     }
 
-                    if (POST_RESET)
-                        gTaskFsm.m_gtaskFSM = task_working_RESET;
+
                 }
                     break;
 

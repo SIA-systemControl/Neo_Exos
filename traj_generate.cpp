@@ -84,4 +84,19 @@ double identify_acceleration(int curve_count, double a0, const double* a, const 
     return sum;
 }
 
+double identify_3rd(int curve_count, double a0, const double* a, const double* b ,double w){
+    double sum = 0;
+    for(int i=0; i<10;i++){
+        sum += -a[i]*(w*(i+1)*w*(i+1))*cos((i+1)*curve_count*Ts*w) - b[i]*(w*(i+1)*w*(i+1))*sin((i+1)*curve_count*Ts*w);
+    }
+    return sum;
+}
+
+double identify_4th(int curve_count, double a0, const double* a, const double* b ,double w){
+    double sum = 0;
+    for(int i=0; i<10;i++){
+        sum += a[i]*(w*(i+1)*w*(i+1)*w*(i+1))*sin((i+1)*curve_count*Ts*w) - b[i]*(w*(i+1)*w*(i+1)*w*(i+1))*cos((i+1)*curve_count*Ts*w);
+    }
+    return sum;
+}
 
