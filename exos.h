@@ -88,26 +88,6 @@
 #define r_knee  1
 #define r_ankle 0
 
-/** ------ Left Part ----- **/
-//#define left_hip_init_motor_cnt 29976
-//#define left_hip_init_spring_cnt 1800
-//
-//#define left_knee_init_motor_cnt 94502
-//#define left_knee_init_spring_cnt 2702
-//
-//#define left_ankle_init_motor_cnt 76454
-//#define left_ankle_init_spring_cnt 1101
-//
-///** ------ Right Part ----- **/
-//#define right_hip_init_motor_cnt -33125
-//#define right_hip_init_spring_cnt 1312
-//
-//#define right_knee_init_motor_cnt -51846
-//#define right_knee_init_spring_cnt 244
-//
-//#define right_ankle_init_motor_cnt -59505
-//#define right_ankle_init_spring_cnt 3977
-
 #ifdef Tracking_Impendance
 
 #define left_hip_init_rad -0.07
@@ -194,10 +174,8 @@ typedef struct _GsysRunningParm {
 // OP task FSM
 typedef enum _TaskFSM {
     task_working_RESET,
-    task_working_Control,
     task_working_Identification,
     task_working_Impedance,
-    task_working_Sit2Stand,
     task_working_CSP_tracking,
     task_working_Checking
 } TaskFSM;
@@ -257,7 +235,7 @@ double i_b_ankle[10] = {-0.0533, 0.3066, -0.0668, -0.2199, -1.0236, -0.9524, -0.
 double i_w_ankle = 2 * Pi * 0.1;
 double i_a0_ankle = 0.9358;
 
-int P_main = 3000; // time of Gait Cycle [ms]
+int P_main = 3000; // default time of Gait Cycle [ms]
 int P_sub = 3000;
 
 // Offsets for PDO entries
@@ -482,7 +460,7 @@ static ec_sync_info_t device_syncs[] = {
 void releaseMaster(void) {
     if (master) {
         std::cout << std::endl;
-        std::cout << "End of program, release master." << std::endl;
+        std::cout << "Released EtherCAT-Master Object." << std::endl;
         ecrt_release_master(master);
         master = NULL;
     }
@@ -636,8 +614,7 @@ void check_slave_config_states(void) {
     }
 }
 
-int ActivateMaster(void) {
-    int ret;
+int ActivateMaster() {
     std::cout << "Requesting master ... " << std::endl;
 
     if (master)
@@ -677,6 +654,10 @@ static void SIG_handle(int sig);
 void cyclic_task(int task_Cmd);
 
 int pause_to_continue() {
+    /**
+     * Only Used For Special DEBUG.
+     * ---- this function will interrupt EtherCAT communication loop
+     */
     std::cout << "Pause Now." << std::endl;
     std::cout << "Press any key to continue..." << std::endl;
     struct termios tm, tm_old;
@@ -694,7 +675,7 @@ int pause_to_continue() {
     return c;
 }
 
-// =========== Data Structure ============
+// =========== Acc Data Class ============
 class AccData{
 public:
     AccData();

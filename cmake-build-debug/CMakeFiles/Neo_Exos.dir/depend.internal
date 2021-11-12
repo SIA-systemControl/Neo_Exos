@@ -13,7 +13,6 @@ CMakeFiles/Neo_Exos.dir/exos.cpp.o
  /home/yc/CLionProjects/SIA_team/Neo_Exos/Unit.h
  /home/yc/CLionProjects/SIA_team/Neo_Exos/Utils.h
  /home/yc/CLionProjects/SIA_team/Neo_Exos/csvReader.hpp
- /home/yc/CLionProjects/SIA_team/Neo_Exos/dataDecode.h
  /home/yc/CLionProjects/SIA_team/Neo_Exos/dataParse.hpp
  /home/yc/CLionProjects/SIA_team/Neo_Exos/dynamics.h
  /home/yc/CLionProjects/SIA_team/Neo_Exos/exos.cpp
@@ -23,7 +22,6 @@ CMakeFiles/Neo_Exos.dir/exos.cpp.o
  /opt/etherlab/include/ecrt.h
 CMakeFiles/Neo_Exos.dir/main.cpp.o
  /home/yc/CLionProjects/SIA_team/Neo_Exos/Period.h
- /home/yc/CLionProjects/SIA_team/Neo_Exos/dataDecode.h
  /home/yc/CLionProjects/SIA_team/Neo_Exos/main.cpp
 CMakeFiles/Neo_Exos.dir/timeInterval.cpp.o
  /home/yc/CLionProjects/SIA_team/Neo_Exos/timeInterval.cpp

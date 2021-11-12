@@ -110,9 +110,6 @@
 		<Unit filename="/home/yc/CLionProjects/SIA_team/Neo_Exos/csvReader.hpp">
 			<Option target="Neo_Exos"/>
 		</Unit>
-		<Unit filename="/home/yc/CLionProjects/SIA_team/Neo_Exos/dataDecode.h">
-			<Option target="Neo_Exos"/>
-		</Unit>
 		<Unit filename="/home/yc/CLionProjects/SIA_team/Neo_Exos/dataParse.hpp">
 			<Option target="Neo_Exos"/>
 		</Unit>

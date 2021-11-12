@@ -16,13 +16,13 @@
  */
 double base_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0);
 
-double differentia_1st_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
+double differential_1st_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
 
-double differentia_2ed_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
+double differential_2ed_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
 
-double differentia_3rd_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
+double differential_3rd_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
 
-double differentia_4th_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
+double differential_4th_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
 
 double sineWave(int curve_count, double freq, double amp);
 

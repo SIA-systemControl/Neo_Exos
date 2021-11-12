@@ -20,7 +20,7 @@ double base_Fourier_8th(double GaitCycle, const double *a, const double *b, doub
     return sum;
 }
 
-double differentia_1st_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P) {
+double differential_1st_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P) {
     double sum = 0;
     for (int i = 0; i < 8; i++)
         sum += -((i + 1) * w / (P / 1000)) * a[i] * sin((i + 1) * GaitCycle * w) +
@@ -28,7 +28,7 @@ double differentia_1st_Fourier_8th(double GaitCycle, const double *a, const doub
     return sum;
 }
 
-double differentia_2ed_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P) {
+double differential_2ed_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P) {
     double sum = 0;
     for (int i = 0; i < 8; i++)
         sum += -((i + 1) * w / (P / 1000)) * ((i + 1) * w / (P / 1000)) * a[i] * cos((i + 1) * GaitCycle * w) +
@@ -36,7 +36,7 @@ double differentia_2ed_Fourier_8th(double GaitCycle, const double *a, const doub
     return sum;
 }
 
-double differentia_3rd_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P) {
+double differential_3rd_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P) {
     double sum = 0;
     for (int i = 0; i < 8; i++)
         sum += pow((i + 1) * w / (P / 1000), 3) * a[i] * sin((i + 1) * GaitCycle * w) +
@@ -44,7 +44,7 @@ double differentia_3rd_Fourier_8th(double GaitCycle, const double *a, const doub
     return sum;
 }
 
-double differentia_4th_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P) {
+double differential_4th_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P) {
     double sum = 0;
     for (int i = 0; i < 8; i++)
         sum += pow((i + 1) * w / (P / 1000), 4) * a[i] * cos((i + 1) * GaitCycle * w) +
