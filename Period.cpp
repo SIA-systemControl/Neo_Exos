@@ -9,12 +9,6 @@ int P_update = 3000;
 char c;
 extern bool FLG_pthread_online;
 
-//void quit(int sig) {
-//    (void) sig;
-//    tcsetattr(kfd, TCSANOW, &cooked);
-//    exit(0);
-//}
-
 void *PeriodControl(void *arg) {
 //    signal(SIGINT, quit);
     KeyDetect();
@@ -39,7 +33,6 @@ void KeyDetect() {
             perror("read():");
             exit(-1);
         }
-
 
         switch (c) {
             case KEY_UP: {

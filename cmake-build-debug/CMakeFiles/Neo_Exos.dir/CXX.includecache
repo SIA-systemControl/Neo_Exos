@@ -6,38 +6,12 @@
 
 #IncludeRegexTransform: 
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/LowPassFilter.cpp
-LowPassFilter.hpp
-/home/yc/CLionProjects/SIA_team/Neo_Exos/LowPassFilter.hpp
-iostream
--
-
 /home/yc/CLionProjects/SIA_team/Neo_Exos/LowPassFilter.hpp
 cmath
 -
 
 /home/yc/CLionProjects/SIA_team/Neo_Exos/PID.h
 cmath
--
-
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Period.cpp
-Period.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Period.h
-
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Period.h
-termio.h
--
-csignal
--
-unistd.h
--
-fcntl.h
--
-cstring
--
-cstdlib
--
-cstdio
 -
 
 /home/yc/CLionProjects/SIA_team/Neo_Exos/Unit.h
@@ -54,8 +28,6 @@ string
 sstream
 -
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/dataDecode.h
-
 /home/yc/CLionProjects/SIA_team/Neo_Exos/dataParse.hpp
 
 /home/yc/CLionProjects/SIA_team/Neo_Exos/dynamics.h
@@ -71,8 +43,6 @@ iomanip
 -
 exos.h
 /home/yc/CLionProjects/SIA_team/Neo_Exos/exos.h
-dataDecode.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/dataDecode.h
 csvReader.hpp
 /home/yc/CLionProjects/SIA_team/Neo_Exos/csvReader.hpp
 dataParse.hpp
@@ -132,22 +102,6 @@ vector
 timeInterval.h
 /home/yc/CLionProjects/SIA_team/Neo_Exos/timeInterval.h
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/main.cpp
-iostream
--
-fstream
--
-sstream
--
-dataDecode.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/dataDecode.h
-Period.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Period.h
-
-/home/yc/CLionProjects/SIA_team/Neo_Exos/timeInterval.cpp
-timeInterval.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/timeInterval.h
-
 /home/yc/CLionProjects/SIA_team/Neo_Exos/timeInterval.h
 iostream
 -
@@ -155,12 +109,6 @@ stack
 -
 ctime
 -
-
-/home/yc/CLionProjects/SIA_team/Neo_Exos/traj_generate.cpp
-cmath
--
-traj_generate.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/traj_generate.h
 
 /home/yc/CLionProjects/SIA_team/Neo_Exos/traj_generate.h
 

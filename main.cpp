@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include "dataDecode.h"
 //#include "bodyBendDetection.h"
 #include "Period.h"
 
@@ -12,10 +11,8 @@ pthread_cond_t cond;
 
 task_list g_task_list[] = {
         {task_working_RESET,          "run task_working_RESET"},
-        {task_working_Control,        "run task_working_Control"},
         {task_working_Identification, "run task_working_Identification"},
         {task_working_Impedance,      "run task_working_Impedance"},
-        {task_working_Sit2Stand,      "run task_working_Sit2Stand"},
         {task_working_CSP_tracking,   "run task_working_CSP_tracking"},
         {task_working_Checking,       "run task_working_Checking"},
 };
@@ -57,16 +54,22 @@ int main(int argc, char *argv[]) {
         if (input_data[0] == '.') {
             int id = atoi(&input_data[1]);
 
-            if (id > task_cmd_size || id < 0) {
-                printf("not valid input.\n");
+            if (id >= task_cmd_size || id < 0) {
+                printf("invalid command, confirm and input again.\n");
                 continue;
+            } else {
+                task_cmd = g_task_list[id].taskSelect;
+                FLG_TASK_SELECT = false;
             }
-
-            task_cmd = g_task_list[id].taskSelect;
-
-            std::cout << g_task_list[id].info << std::endl;
-            FLG_TASK_SELECT = false;
         }
+    }
+
+    std::cout << "===================================================" << std::endl;
+    std::cout << "Selected task_cmd = " << g_task_list[task_cmd].info << std::endl;
+    std::cout << "===================================================" << std::endl;
+    for (int i = 0; i < 3; i++) {
+        std::cout << "Confirm input task_cmd in [" << 3 - i << "] second(s)." << std::endl;
+        usleep(1000000);
     }
 
     if (pthread_attr_init(&attr_robot) != 0)
