@@ -49,7 +49,6 @@
 #include "timeInterval.h"
 
 
-
 #define left  true
 #define right false
 
@@ -177,6 +176,7 @@ typedef enum _TaskFSM {
     task_working_Identification,
     task_working_Impedance,
     task_working_CSP_tracking,
+    task_working_Impedance_GRF,
     task_working_Checking
 } TaskFSM;
 
@@ -184,8 +184,20 @@ typedef struct _GTaskFSM {
     TaskFSM m_gtaskFSM;
 } GTaskFSM;
 
+typedef enum _Controller {
+    Impedance_tracking,
+    Transparency
+} Controller;
+
+typedef struct _GaitController {
+    Controller controller;
+} gaitController;
+
+
 GsysRunningParm gSysRunning;
 GTaskFSM gTaskFsm;
+gaitController LT_Controller;
+gaitController RT_Controller;
 
 int SERVE_OP = 0;
 int ecstate = 0;
@@ -198,11 +210,15 @@ double w_hip = 6.27659139567477;  // angle freq  = 2*pi*f where f is base freq
 double w_knee = w_hip;  // angle freq  = 2*pi*f where f is base freq
 double w_ankle = w_hip;  // angle freq  = 2*pi*f where f is base freq
 
-double a_hip[8] = {0.308750228166298, -0.0301760062107781, 0.00505607355750842, 0.00159201009938250,
-                   -0.00281684827129251, 0.00129439626305321, -0.00504290840263287, 0.00382003697292678};
-double b_hip[8] = {-0.0917919985841033, -0.0229946587230083, 0.0228749586595578, -8.60002514422098e-05,
-                   0.00199416878210645, -0.00444905211999233, 0.00132143317171056, 0.000876821564775400};
-double a0_hip = 0.187072145486077;
+//double a_hip[8] = {0.308750228166298, -0.0301760062107781, 0.00505607355750842, 0.00159201009938250,
+//                   -0.00281684827129251, 0.00129439626305321, -0.00504290840263287, 0.00382003697292678};
+
+double a_hip[8] = {0.295123922790271, -0.0396807769917732, 0.00295426462630461, 0.00655880115321634,
+                   0.00595258148856191, 0.00995653597100669, 0.000482635171710305, 0.00602219880116759};
+
+double b_hip[8] = {-0.0827336085549393, -0.00965989533825686, 0.0381526852994244, 0.0123514227218906,
+                   0.00887374371529301, -0.00311873317036715, -0.000910621647840406, -0.00157410247062698};
+double a0_hip = 0.1799;
 
 double a_knee[8] = {0.0985635337735540, 0.278740647777703, 0.0286360377526829, 0.0250057934881560, 0.0219855831069594,
                     0.000554154299564611, 0.00690268692893109, 0.000709369274812899};
@@ -334,8 +350,6 @@ ec_pdo_entry_reg_t domain_Tx_reg[] = {
 
         {SynapticonSlave1, Synapticon, 0x230A, 0, &offset.second_position[r_hip]},
         {SynapticonSlave1, Synapticon, 0x230B, 0, &offset.second_velocity[r_hip]},
-        {SynapticonSlave1, Synapticon, 0x2401, 0, &offset.analog_in1[r_hip]},
-        {SynapticonSlave1, Synapticon, 0x2402, 0, &offset.analog_in2[r_hip]},
         {SynapticonSlave1, Synapticon, 0x603F, 0, &offset.Error_code[r_hip]},
 
         // slave - 2
@@ -383,6 +397,10 @@ ec_pdo_entry_reg_t domain_Tx_reg[] = {
         {SynapticonSlave5, Synapticon, 0x230A, 0, &offset.second_position[l_knee]},
         {SynapticonSlave5, Synapticon, 0x230B, 0, &offset.second_velocity[l_knee]},
         {SynapticonSlave5, Synapticon, 0x603F, 0, &offset.Error_code[l_knee]},
+
+        // TODO: actual GRF input configuration may be changed.
+        {SynapticonSlave5, Synapticon, 0x2401, 0, &offset.analog_in1[l_knee]},
+        {SynapticonSlave5, Synapticon, 0x2402, 0, &offset.analog_in2[l_knee]},
 
         // slave - 6
         {SynapticonSlave6, Synapticon, 0x6041, 0, &offset.status_word[l_ankle]},
@@ -676,12 +694,16 @@ int pause_to_continue() {
 }
 
 // =========== Acc Data Class ============
-class AccData{
+class AccData {
 public:
     AccData();
+
     AccData(double freq);
+
     double update(double input);
+
     double get() const;
+
     double getOld() const;
 
 private:
@@ -690,23 +712,45 @@ private:
     double freq;
 };
 
-AccData::AccData():old_data(0),acc(0),freq(0.001) {}
+AccData::AccData() : old_data(0), acc(0), freq(0.001) {}
 
-AccData::AccData(double freq) :old_data(0),acc(0),freq(freq) {}
+AccData::AccData(double freq) : old_data(0), acc(0), freq(freq) {}
 
 double AccData::get() const {
     return acc;
 }
 
-double AccData::getOld() const{
+double AccData::getOld() const {
     return old_data;
 }
 
 double AccData::update(double input) {
-    double res = (input - old_data)/freq;
+    double res = (input - old_data) / freq;
     old_data = input;
     acc = res;
     return res;
+}
+
+// ======== Some interface of EtherCAT ======
+inline void SwitchUp_OP_mode(int slave_id, int Mode) {
+    int Current_mode = EC_READ_S8(domainTx_pd + offset.modes_of_operation_display[slave_id]);
+    if (Current_mode != Mode)
+        EC_WRITE_S8(domainRx_pd + offset.operation_mode[slave_id], Mode);
+}
+
+void SwitchUp_OP_mode(bool Limb_side, int Mode) {
+    if (Limb_side == right) // define [Right <- false]
+    {
+        for (int i = 0; i < 3; i++) {
+            SwitchUp_OP_mode(i, Mode);
+        }
+    } else if(Limb_side == left) // [Left <- true]
+    {
+        for (int i = 4; i < 6; i++) {
+            SwitchUp_OP_mode(i, Mode);
+        }
+    }
+
 }
 
 #endif //EXOS_IMPEDANCECONTROL_EXOS_H

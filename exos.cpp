@@ -35,6 +35,8 @@ bool FLG_RIGHT_GC_1st = false;
 bool FLG_RIGHT_GC_end = false;
 bool FLG_IDENTIFY_STARTUP = false;
 bool FLG_TRACKING_STARTUP = false;
+bool FLG_DETECT_T_ST = false;
+bool FLG_DETECT_ST_T = false;
 
 // ============= CSV objects ========
 std::ofstream left_outFile;
@@ -94,6 +96,7 @@ static int curve_cnt_right = 0;
 static int curve_cnt_left = 0;
 static int time_cnt = 0;
 
+// ============= Task selection command ====
 int task_cmd = 0;
 
 Eigen::Matrix2d GaitMatrix;
@@ -145,7 +148,8 @@ void *robotcontrol(void *arg) {
     task_cmd = *(int *) arg;
 
     std::cout << "Passed task_cmd = " << task_cmd << std::endl;
-
+    if (TaskFSM(task_cmd) == task_working_Checking)
+        std::cout << "passed." << std::endl;
 
     gSysRunning.m_gWorkStatus = sys_working_POWER_ON;
     gTaskFsm.m_gtaskFSM = task_working_RESET;
@@ -235,6 +239,7 @@ void *robotcontrol(void *arg) {
         }
     }
 
+    // TODO: [GaitMatrix] Consider if need it.
     GaitMatrix << 1, 1, 1, 1;
     gMFSM.m_gaitMatrixFsm = Stance;
 
@@ -616,6 +621,13 @@ void cyclic_task(int task_Cmd) {
             double tau_mot_5 = tau_thousand2Nm(EC_READ_S16(domainTx_pd + offset.actual_torque[l_knee]), 0.3);
             double tau_mot_6 = tau_thousand2Nm(EC_READ_S16(domainTx_pd + offset.actual_torque[l_ankle]), 0.3);
 
+
+            /**
+             * GRF sensor
+             */
+            unsigned int GRF_l_1 = EC_READ_U16(domainTx_pd + offset.analog_in1[l_knee]);
+            unsigned int GRF_l_2 = EC_READ_U16(domainTx_pd + offset.analog_in2[l_knee]);
+
             switch (gTaskFsm.m_gtaskFSM) {
                 case task_working_RESET: {
                     if (!(cycle_count % 10)) { // show message per 10 ms. (base freq = 1Khz)
@@ -660,7 +672,12 @@ void cyclic_task(int task_Cmd) {
 
                         for (int i = 0; i < active_num; i++) {
                             unsigned int E_code = EC_READ_U16(domainTx_pd + offset.Error_code[i]);
-                            ErrorCodeParse(E_code);
+                            if (E_code != 0x0000) {
+                                std::cout << "=================================== " << std::endl;
+                                std::cout << "[" << i << "] slave reported error." << std::endl;
+                                std::cout << "----------------------------------- " << std::endl;
+                                ErrorCodeParse(E_code);
+                            }
                         }
                     }
 
@@ -681,7 +698,7 @@ void cyclic_task(int task_Cmd) {
                         double reset_r_knee_vel = 0;
                         double reset_r_ankle_vel = 0;
 
-                        if (task_Cmd == 1) { // taskFSM == identification
+                        if (TaskFSM(task_Cmd) == task_working_Identification) { // taskFSM == identification
                             reset_r_hip_vel = r_Hip_reset_pid.pid_control(right_hip_identify_init_rad,
                                                                           r_hip_rad, 3000);
                             reset_r_knee_vel = r_Knee_reset_pid.pid_control(right_knee_identify_init_rad,
@@ -698,7 +715,7 @@ void cyclic_task(int task_Cmd) {
                         }
 
 
-                        if (task_Cmd != 4) { // taskFSM == checking
+                        if (TaskFSM(task_Cmd) != task_working_Checking) { // taskFSM == checking
                             EC_WRITE_S32(domainRx_pd + offset.target_velocity[r_hip], reset_r_hip_vel);
                             EC_WRITE_S32(domainRx_pd + offset.target_velocity[r_knee], reset_r_knee_vel);
                             EC_WRITE_S32(domainRx_pd + offset.target_velocity[r_ankle], reset_r_ankle_vel);
@@ -708,7 +725,7 @@ void cyclic_task(int task_Cmd) {
                         double reset_l_knee_vel = 0;
                         double reset_l_ankle_vel = 0;
 
-                        if (task_Cmd == 1) {
+                        if (TaskFSM(task_Cmd) == task_working_Identification) {
                             reset_l_hip_vel = l_Hip_reset_pid.pid_control(left_hip_identify_init_rad,
                                                                           l_hip_rad, 3000);
                             reset_l_knee_vel = l_Knee_reset_pid.pid_control(left_knee_identify_init_rad,
@@ -725,7 +742,7 @@ void cyclic_task(int task_Cmd) {
                         }
 
 
-                        if (task_Cmd != 4) {
+                        if (TaskFSM(task_Cmd) != task_working_Checking) {
                             EC_WRITE_S32(domainRx_pd + offset.target_velocity[l_hip], reset_l_hip_vel);
                             EC_WRITE_S32(domainRx_pd + offset.target_velocity[l_knee], reset_l_knee_vel);
                             EC_WRITE_S32(domainRx_pd + offset.target_velocity[l_ankle], reset_l_ankle_vel);
@@ -979,7 +996,8 @@ void cyclic_task(int task_Cmd) {
                         double knee_ref_vel_r =
                                 0.8 * differential_1st_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
                         double ankle_ref_vel_r =
-                                1.0 * differential_1st_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
+                                1.0 *
+                                differential_1st_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
 
                         /**
                          *  Following term is used to calculated theta_d for compensation.(if need it)
@@ -990,7 +1008,8 @@ void cyclic_task(int task_Cmd) {
                         double knee_ref_acc_r =
                                 0.8 * differential_2ed_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
                         double ankle_ref_acc_r =
-                                1.0 * differential_2ed_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
+                                1.0 *
+                                differential_2ed_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
 
                         // ==================== 3rd ====================
                         double hip_ref_3rd_r =
@@ -1092,10 +1111,10 @@ void cyclic_task(int task_Cmd) {
 
 #ifdef Tracking_Impendance
 
-                        K_r << 60, 60, 30;
+                        K_r << 80, 60, 30;
                         B_r << 0.2, 0.2, 1;
 
-                        K_l << 60, 60, 30;
+                        K_l << 80, 60, 30;
                         B_l << 0.2, 0.2, 0.8;
 
                         d4q_r << hip_ref_4th_r, knee_ref_4th_r, ankle_ref_4th_r;
@@ -1179,7 +1198,7 @@ void cyclic_task(int task_Cmd) {
 
                         left_H_Select_matrix
                                 <<
-                                0, 0, 0,
+                                0.5, 0, 0,
                                 0, 0, 0,
                                 0, 0, 0;
 
@@ -1192,20 +1211,20 @@ void cyclic_task(int task_Cmd) {
                         right_G_Select_matrix
                                 <<
                                 0.7, 0, 0,
-                                0, 0.8, 0,
-                                0, 0, 0.6;
+                                0, 0.7, 0,
+                                0, 0, 0.7;
 
                         right_H_Select_matrix
                                 <<
-                                0.4, 0, 0,
+                                0.5, 0, 0,
                                 0, 0, 0,
                                 0, 0, 0;
 
                         right_C_Select_matrix
                                 <<
                                 0.7, 0, 0,
-                                0, 0.8, 0,
-                                0, 0, 0.6;
+                                0, 0.7, 0,
+                                0, 0, 0.7;
 #endif
 
 #ifdef Drag_Impendance
@@ -1261,7 +1280,7 @@ void cyclic_task(int task_Cmd) {
                         r_Ankle_pd.pid_set_params(0.3, 0, 1);
 
                         l_Hip_pd.pid_set_params(0.12, 0, 2);
-                        l_Knee_pd.pid_set_params(0.1, 0, 1);
+                        l_Knee_pd.pid_set_params(0.08, 0, 1.2);
                         l_Ankle_pd.pid_set_params(0.3, 0, 0.8);
 
 #ifdef Drag_Impendance
@@ -1395,11 +1414,15 @@ void cyclic_task(int task_Cmd) {
 
                             std::cout << "G_term of Hip: " << G_term_r(0) << std::endl;
 
-                            std::cout << " ---- Servo Error Status ---- " << std::endl;
                             for (int i = 0; i < active_num; i++) {
                                 unsigned int error_code;
                                 error_code = EC_READ_U16(domainTx_pd + offset.Error_code[i]);
-                                ErrorCodeParse(error_code);
+                                if (error_code != 0x0000) {
+                                    std::cout << "=================================== " << std::endl;
+                                    std::cout << "[" << i << "] slave reported error." << std::endl;
+                                    std::cout << "----------------------------------- " << std::endl;
+                                    ErrorCodeParse(error_code);
+                                }
                             }
 
                         }
@@ -1509,7 +1532,8 @@ void cyclic_task(int task_Cmd) {
                         double knee_ref_vel_r =
                                 0.6 * differential_1st_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
                         double ankle_ref_vel_r =
-                                1.0 * differential_1st_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
+                                1.0 *
+                                differential_1st_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
 
                         int r_hip_tracking_cnt =
                                 cnt_startup_r_hip + 100 * pos_rad2inc_17bits(hip_ref_rad_r - right_hip_init_rad);
@@ -1619,11 +1643,15 @@ void cyclic_task(int task_Cmd) {
                             std::cout << "Current P = " << P_main << std::endl;
                             std::cout << "===============================" << std::endl;
 
-                            std::cout << " ---- Servo Error Status ---- " << std::endl;
                             for (int i = 0; i < active_num; i++) {
                                 unsigned int error_code;
                                 error_code = EC_READ_U16(domainTx_pd + offset.Error_code[i]);
-                                ErrorCodeParse(error_code);
+                                if (error_code != 0x0000) {
+                                    std::cout << "=================================== " << std::endl;
+                                    std::cout << "[" << i << "] slave reported error." << std::endl;
+                                    std::cout << "----------------------------------- " << std::endl;
+                                    ErrorCodeParse(error_code);
+                                }
                             }
 
                         }
@@ -1676,6 +1704,719 @@ void cyclic_task(int task_Cmd) {
                 }
                     break;
 
+                case task_working_Impedance_GRF: {
+                    // Right-limb first strategy [curve_cnt_right PART]
+                    GaitMatrix = UpdateGaitMatrix(300, 0, GRF_l_1,
+                                                  GRF_l_2); //TODO: didn't connect right limb sensors now.
+                    int GaitPhase = GaitMatrixParse(GaitMatrix);   // Gait Phase State
+                    LT_Controller.controller = Impedance_tracking; // default controller is Impedance_tracking
+                    RT_Controller.controller = Impedance_tracking;
+
+                    /** Gait Phase FSM **/
+                    switch (GaitPhase) {
+                        case HOHS:
+                            if (gMFSM.m_gaitMatrixFsm == ST_S)
+                                gMFSM.m_gaitMatrixFsm = HO_HS;
+                            break;
+                        case TOS: {
+                            if ((gMFSM.m_gaitMatrixFsm == HO_HS) || (gMFSM.m_gaitMatrixFsm == Stance))
+                                gMFSM.m_gaitMatrixFsm = T_ST;
+                        }
+                            break;
+                        case SwS:
+                            if (gMFSM.m_gaitMatrixFsm == T_ST)
+                                gMFSM.m_gaitMatrixFsm = S_ST;
+                            break;
+                        case HSHO:
+                            if (gMFSM.m_gaitMatrixFsm == S_ST)
+                                gMFSM.m_gaitMatrixFsm = HS_HO;
+                            break;
+                        case STO:
+                            if ((gMFSM.m_gaitMatrixFsm == HS_HO) || (gMFSM.m_gaitMatrixFsm == Stance))
+                                gMFSM.m_gaitMatrixFsm = ST_T;
+                            break;
+                        case SSw:
+                            if (gMFSM.m_gaitMatrixFsm == ST_T)
+                                gMFSM.m_gaitMatrixFsm = ST_S;
+                            break;
+                        case doubleStance:
+                            if ((gMFSM.m_gaitMatrixFsm == ST_S) || (gMFSM.m_gaitMatrixFsm == S_ST))
+                                gMFSM.m_gaitMatrixFsm = Stance;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (!FLG_RIGHT_GC_1st) { // at first right Gc
+                        Gc_main = 1.0 * (curve_cnt_right % P_main) / P_main + 0.4; //TODO: offset = 0.35 is better?
+
+                        if (Gc_main >= 1.0 && gMFSM.m_gaitMatrixFsm == HO_HS) {
+                            /** Case 1:
+                             *      first right curve is ended and Gait exceed right limb Heel strike
+                             * ---> start new Gc
+                             * ---> if controller != Impedance_tracking, switch to it,
+                             *      (this case is rarely in actual)
+                             */
+                            Gc_main = 0.0;
+                            FLG_RIGHT_GC_1st = true; // flag for special initial gait
+                            LEFT_GC_START = true; // flag for waking up Left limb
+                            curve_cnt_right = 0;
+                            RT_Controller.controller = Impedance_tracking;
+                        } else if (Gc_main >= 1.0 && gMFSM.m_gaitMatrixFsm != HO_HS) {
+                            /** Case 2:
+                              *     first right curve is ended, but actual Gc doesn't exceed HOHS
+                              * ---> (1) stop curve counter. --> [Done]
+                              * ---> (2) switch to transparency mode
+                              * ---> (3) doesn't switch controller until case 1 or 3 happen.
+                              *     (this case is mostly happen in actual)
+                              */
+                            curve_cnt_right--; // counteract later curve_cnt_right self-increase
+                            RT_Controller.controller = Transparency;
+                        } else if (Gc_main < 1.0 && gMFSM.m_gaitMatrixFsm == HO_HS) {
+                            /** Case 3:
+                             *      first right heel strike but curve doesn't ended
+                             * ---> (1) force to reset curve counter
+                             * ---> (2) switch to transparency mode
+                             * ---> (3) detect T_ST state for switching to tracking mode[*]
+                             *      (this case only happen when subject force driving exos)
+                             */
+                            curve_cnt_right = 0;
+                            Gc_main = 0.0;
+                            FLG_RIGHT_GC_1st = true; // flag for special initial gait
+                            LEFT_GC_START = true; // flag for waking up Left limb
+                            FLG_DETECT_T_ST = true;
+                            RT_Controller.controller = Transparency;
+                        }
+                    } else { // at normal Gait
+
+                        if (!FLG_DETECT_T_ST) { // last cycle is not in case 3
+                            if (Gc_main == 0.0 && gMFSM.m_gaitMatrixFsm == HO_HS) {
+                                /** Case 1:
+                                 *      GRF and Curve reach HS point synchronously.
+                                 * ---> (1) reset curve counter
+                                 * ---> (2) hold Impedance_tracking mode.
+                                 */
+                                curve_cnt_right = 0;
+                                P_main = P_update; // update P according to [Period-Thread]}
+                                RT_Controller.controller = Impedance_tracking;
+                            } else if (Gc_main == 0.0 && gMFSM.m_gaitMatrixFsm != HO_HS) {
+                                /** Case 2:
+                                 *      Curve is ahead of GRF
+                                 * ---> (1) stop curve counter.
+                                 * ---> (2) switch to transparency mode
+                                 * ---> (3) doesn't switch controller until case 1 or 3 happen.
+                                 */
+                                curve_cnt_right--;
+                                RT_Controller.controller = Transparency;
+                            } else if (Gc_main != 0.0 && gMFSM.m_gaitMatrixFsm == HO_HS) {
+                                /** Case 3:
+                                 *      GRF is ahead of Curve
+                                 * ---> (1) force to reset curve counter
+                                 * ---> (2) switch to transparency mode
+                                 * ---> (3) detect T_ST state for switching to tracking mode[*]
+                                 */
+                                curve_cnt_right = 0;
+                                Gc_main = 0;
+                                FLG_DETECT_T_ST = true;
+                                RT_Controller.controller = Transparency;
+                            }
+                        } else { // last cycle is case 3 need to clear FLG_DETECT_T_ST
+                            /** Case 4:
+                             * if last cycle is case 3, the next gait FSM must be T_ST
+                             * before T_ST state, exos still in transparency mode, curve couter stop.
+                             */
+                            if(gMFSM.m_gaitMatrixFsm == T_ST){
+                                /**
+                                 * if T_ST is detected,
+                                 * ---> (1) the Curve counter should start at Stance phase( here is 0.1? )
+                                 * ---> (2) switching to Tracking mode.
+                                 * ---> (3) clear FLG_DETECT_T_ST
+                                 */
+                                curve_cnt_right = 0.1*P_main; //TODO: offset need to be verified.
+                                RT_Controller.controller = Impedance_tracking;
+                                FLG_DETECT_T_ST = false;
+                            } else
+                                curve_cnt_right--;
+                        }
+                        Gc_main = 1.0 * (curve_cnt_right % P_main) / P_main;
+                    }
+
+                    curve_cnt_right++;
+
+                    if (!POST_RESET) {
+                        double hip_ref_rad_r = 0.8 * base_Fourier_8th(Gc_main, a_hip, b_hip, w_hip, a0_hip);
+                        double knee_ref_rad_r = 0.8 * base_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee);
+                        double ankle_ref_rad_r =
+                                1.0 * base_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle);
+
+                        double hip_ref_vel_r =
+                                0.8 * differential_1st_Fourier_8th(Gc_main, a_hip, b_hip, w_hip, a0_knee, P_main);
+                        double knee_ref_vel_r =
+                                0.8 *
+                                differential_1st_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
+                        double ankle_ref_vel_r =
+                                1.0 *
+                                differential_1st_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
+
+                        /**
+                         *  Following term is used to calculated theta_d for compensation.(if need it)
+                         */
+
+                        double hip_ref_acc_r =
+                                0.8 * differential_2ed_Fourier_8th(Gc_main, a_hip, b_hip, w_hip, a0_hip, P_main);
+                        double knee_ref_acc_r =
+                                0.8 *
+                                differential_2ed_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
+                        double ankle_ref_acc_r =
+                                1.0 *
+                                differential_2ed_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
+
+                        // ==================== 3rd ====================
+                        double hip_ref_3rd_r =
+                                0.8 * differential_3rd_Fourier_8th(Gc_main, a_hip, b_hip, w_hip, a0_hip, P_main);
+                        double knee_ref_3rd_r =
+                                0.8 *
+                                differential_3rd_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
+                        double ankle_ref_3rd_r =
+                                differential_3rd_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
+
+                        // ==================== 4th ====================
+                        double hip_ref_4th_r =
+                                0.8 * differential_4th_Fourier_8th(Gc_main, a_hip, b_hip, w_hip, a0_hip, P_main);
+
+                        double knee_ref_4th_r =
+                                0.8 *
+                                differential_4th_Fourier_8th(Gc_main, a_knee, b_knee, w_knee, a0_knee, P_main);
+
+                        double ankle_ref_4th_r =
+                                differential_4th_Fourier_8th(Gc_main, a_ankle, b_ankle, w_ankle, a0_ankle, P_main);
+
+                        // Right-limb first strategy [curve_cnt_left PART]
+                        if (FLG_RIGHT_GC_1st) {
+                            if (!FLG_LEFT_GC_1st) { // first special gait for left limb
+                                Gc_sub = 1.0 * (curve_cnt_left % P_sub) / P_sub + 0.4;
+                                if (Gc_sub >= 1.0) {
+                                    if (GaitPhase == HSHO) {
+                                        RT_Controller.controller = Impedance_tracking;
+                                        Gc_sub = 0.0;
+                                        FLG_LEFT_GC_1st = true;
+                                        curve_cnt_left = 0;
+                                    } else if (GaitPhase != HSHO) {
+                                        RT_Controller.controller = Transparency;
+                                        curve_cnt_left--;
+                                    }
+                                }
+                            } else { // normal Gait Cycle
+                                Gc_sub = 1.0 * (curve_cnt_left % P_sub) / P_sub;
+                                if (Gc_sub == 0.0) {
+                                    if (GaitPhase != HSHO) {
+                                        curve_cnt_right--;
+                                        RT_Controller.controller = Transparency;
+                                    } else {
+                                        curve_cnt_left = 0;
+                                        P_sub = P_update; // update P according to [Period-Thread]}
+                                        RT_Controller.controller = Impedance_tracking;
+                                    }
+                                }
+                            }
+                        } else // stand-by state (before waking up left limb)
+                            Gc_sub = 0.4;
+
+                        if (FLG_RIGHT_GC_1st)
+                            curve_cnt_left++;
+
+
+                        double hip_ref_rad_l = 0.8 * base_Fourier_8th(Gc_sub, a_hip, b_hip, w_hip, a0_hip);
+                        double knee_ref_rad_l = 0.8 * base_Fourier_8th(Gc_sub, a_knee, b_knee, w_knee, a0_knee);
+                        double Ankle_ref_rad_l = base_Fourier_8th(Gc_sub, a_ankle, b_ankle, w_ankle, a0_ankle);
+
+                        double hip_ref_vel_l =
+                                0.8 * differential_1st_Fourier_8th(Gc_sub, a_hip, b_hip, w_hip, a0_knee, P_sub);
+                        double knee_ref_vel_l =
+                                0.8 * differential_1st_Fourier_8th(Gc_sub, a_knee, b_knee, w_knee, a0_knee, P_sub);
+                        double Ankle_ref_vel_l =
+                                differential_1st_Fourier_8th(Gc_sub, a_ankle, b_ankle, w_ankle, a0_ankle, P_sub);
+
+                        /**
+                         *  Following term is used to calculated theta_d for compensation.(if need it)
+                         */
+
+                        double hip_ref_acc_l =
+                                0.8 * differential_2ed_Fourier_8th(Gc_sub, a_hip, b_hip, w_hip, a0_hip, P_sub);
+                        double knee_ref_acc_l =
+                                0.8 * differential_2ed_Fourier_8th(Gc_sub, a_knee, b_knee, w_knee, a0_knee, P_sub);
+                        double Ankle_ref_acc_l =
+                                differential_2ed_Fourier_8th(Gc_sub, a_ankle, b_ankle, w_ankle, a0_ankle, P_sub);
+
+                        // ==================== 3rd ====================
+
+                        double hip_ref_3rd_l =
+                                0.8 * differential_3rd_Fourier_8th(Gc_sub, a_hip, b_hip, w_hip, a0_hip, P_sub);
+                        double knee_ref_3rd_l =
+                                0.8 * differential_3rd_Fourier_8th(Gc_sub, a_knee, b_knee, w_knee, a0_knee, P_sub);
+                        double ankle_ref_3rd_l =
+                                differential_3rd_Fourier_8th(Gc_sub, a_ankle, b_ankle, w_ankle, a0_ankle, P_sub);
+
+                        // ==================== 4th ====================
+
+                        double hip_ref_4th_l =
+                                0.8 * differential_4th_Fourier_8th(Gc_sub, a_hip, b_hip, w_hip, a0_hip, P_sub);
+                        double knee_ref_4th_l =
+                                0.8 * differential_4th_Fourier_8th(Gc_sub, a_knee, b_knee, w_knee, a0_knee, P_sub);
+                        double ankle_ref_4th_l =
+                                differential_4th_Fourier_8th(Gc_sub, a_ankle, b_ankle, w_ankle, a0_ankle, P_sub);
+
+
+                        Eigen::Matrix3d Ks_r, Ks_l;
+
+                        //TODO: the Ks-matirx is the diagonal matrix and the non-zero elements are the stiffness of spring
+                        //      Here is an estimate of spring, ( LS approximation by using MATLAB )
+                        //      the accuracy will be improved with load increase during identification experiment
+
+                        Ks_r << 150, 0, 0,
+                                0, 200, 0,
+                                0, 0, 135;
+
+                        Ks_l << 120, 0, 0,
+                                0, 200, 0,
+                                0, 0, 110;
+
+                        Eigen::Vector3d B_r, K_r, B_l, K_l;
+                        Eigen::Vector3d compensation_r, compensation_l;
+                        Eigen::Vector3d G_term_r, C_term_r, F_term_r, H_term_r;
+                        Eigen::Vector3d G_term_l, C_term_l, F_term_l, H_term_l;
+                        Eigen::Matrix3d left_G_Select_matrix, left_H_Select_matrix, left_C_Select_matrix; // diagonal matrix
+                        Eigen::Matrix3d right_G_Select_matrix, right_H_Select_matrix, right_C_Select_matrix; // diagonal matrix
+
+
+                        switch (RT_Controller.controller) {
+                            case Impedance_tracking: {
+                                right_G_Select_matrix
+                                        <<
+                                        0.7, 0, 0,
+                                        0, 0.7, 0,
+                                        0, 0, 0.7;
+
+                                right_H_Select_matrix
+                                        <<
+                                        0.5, 0, 0,
+                                        0, 0, 0,
+                                        0, 0, 0;
+
+                                right_C_Select_matrix
+                                        <<
+                                        0.7, 0, 0,
+                                        0, 0.7, 0,
+                                        0, 0, 0.7;
+
+                                K_r << 80, 60, 30;
+                                B_r << 0.2, 0.2, 1;
+
+                                d4q_r << hip_ref_4th_r, knee_ref_4th_r, ankle_ref_4th_r;
+                                d3q_r << hip_ref_3rd_r, knee_ref_3rd_r, ankle_ref_3rd_r;
+                                ddq_r << hip_ref_acc_r, (knee_ref_acc_r), (ankle_ref_acc_r);
+                                dq_r << r_hip_vel, r_knee_vel, r_ankle_vel;
+                                q_r << r_hip_rad, r_knee_rad, r_ankle_rad;
+                                dq_e_r << hip_ref_vel_r - r_hip_vel, (knee_ref_vel_r - r_knee_vel), (ankle_ref_vel_r -
+                                                                                                     r_ankle_vel);
+                                q_e_r << hip_ref_rad_r - r_hip_rad, (knee_ref_rad_r - r_knee_rad), (ankle_ref_rad_r -
+                                                                                                    r_ankle_rad);
+
+                                ddtheta_r << right_SEA_dynamics.feedforward_dynamics(d4q_r, d3q_r, ddq_r, dq_r, q_r,
+                                                                                     Ks_r);
+                                dtheta_r << r_hip_m_vel, r_knee_m_vel, r_ankle_m_vel;
+
+
+                                C_term_r = right_SEA_dynamics.Coriolis_term(dq_r, q_r);
+                                F_term_r = right_SEA_dynamics.Friction_motor(dtheta_r);
+                                H_term_r = right_SEA_dynamics.H_term(q_r, ddq_r, ddtheta_r);
+                                G_term_r = right_SEA_dynamics.Gravity_term(q_r);
+                            }
+                                break;
+
+                            case Transparency: {
+                                // right-limb
+                                K_r << 0, 0, 0;
+                                B_r << 0.1, 0.1, 0.1;
+
+                                right_G_Select_matrix
+                                        <<
+                                        0.7, 0, 0,
+                                        0, 0.7, 0,
+                                        0, 0, 0.6;
+
+                                right_H_Select_matrix
+                                        <<
+                                        0.7, 0, 0,
+                                        0, 0, 0,
+                                        0, 0, 0;
+
+                                right_C_Select_matrix
+                                        <<
+                                        0, 0, 0,
+                                        0, 0.7, 0,
+                                        0, 0, 0.6;
+
+                                d4q_r << 0, 0, 0;
+                                d3q_r << 0, 0, 0;
+                                ddq_r << 0, (0), (0);
+                                dq_r << r_hip_vel, r_knee_vel, r_ankle_vel;
+                                q_r << r_hip_rad, r_knee_rad, r_ankle_rad;
+                                dq_e_r << 0 - r_hip_vel, (0 - r_knee_vel), (0 - r_ankle_vel);
+                                q_e_r << 0 - r_hip_rad, (0 - r_knee_rad), (0 - r_ankle_rad);
+
+                                C_term_r = right_SEA_dynamics.Coriolis_term(dq_r, q_r);
+                                F_term_r = right_SEA_dynamics.Friction_motor(dtheta_r);
+                                H_term_r = right_SEA_dynamics.H_term(q_r, ddq_r, ddtheta_r);
+                                G_term_r = right_SEA_dynamics.Gravity_term(q_r);
+
+                            }
+                                break;
+
+                            default:
+                                break;
+
+                        }
+
+                        switch (LT_Controller.controller) {
+                            case Impedance_tracking: {
+                                //left part =>
+                                K_l << 80, 60, 30;
+                                B_l << 0.2, 0.2, 0.8;
+
+                                d4q_l << hip_ref_4th_l, knee_ref_4th_l, ankle_ref_4th_l;
+                                d3q_l << hip_ref_3rd_l, knee_ref_3rd_l, ankle_ref_3rd_l;
+                                ddq_l << hip_ref_acc_l, (knee_ref_acc_l), (Ankle_ref_acc_l);
+                                dq_l << l_hip_vel, (l_knee_vel), (l_ankle_vel);
+                                q_l << l_hip_rad, (l_knee_rad), (l_ankle_rad);
+
+                                dq_e_l << hip_ref_vel_l - l_hip_vel, (knee_ref_vel_l - l_knee_vel), (
+                                        Ankle_ref_vel_l -
+                                        l_ankle_vel);
+                                q_e_l << hip_ref_rad_l - l_hip_rad, (knee_ref_rad_l - l_knee_rad), (
+                                        Ankle_ref_rad_l -
+                                        l_ankle_rad);
+
+                                ddtheta_l = left_SEA_dynamics.feedforward_dynamics(d4q_l, d3q_l, ddq_l, dq_l, q_l,
+                                                                                   Ks_l);
+                                dtheta_l << l_hip_m_vel, l_knee_m_vel, l_ankle_m_vel;
+
+                                left_G_Select_matrix
+                                        <<
+                                        0.7, 0, 0,
+                                        0, 0.7, 0,
+                                        0, 0, 0.5;
+
+                                left_H_Select_matrix
+                                        <<
+                                        0.5, 0, 0,
+                                        0, 0, 0,
+                                        0, 0, 0;
+
+                                left_C_Select_matrix
+                                        <<
+                                        0.7, 0, 0,
+                                        0, 0.7, 0,
+                                        0, 0, 0.5;
+
+                                C_term_l = left_SEA_dynamics.Coriolis_term(dq_l, q_l);
+                                F_term_l = left_SEA_dynamics.Friction_motor(dtheta_l);
+                                H_term_l = left_SEA_dynamics.H_term(q_l, ddq_l, ddtheta_l);
+                                G_term_l = left_SEA_dynamics.Gravity_term(q_l);
+                            }
+                                break;
+
+                            case Transparency: {
+                                K_l << 0, 0, 0;
+                                B_l << 0.2, 0.2, 0.1;
+
+                                left_G_Select_matrix
+                                        <<
+                                        0.7, 0, 0,
+                                        0, 0.8, 0,
+                                        0, 0, 0.5;
+
+                                left_H_Select_matrix
+                                        <<
+                                        0, 0, 0,
+                                        0, 0, 0,
+                                        0, 0, 0;
+
+                                left_C_Select_matrix
+                                        <<
+                                        0, 0, 0,
+                                        0, 0.8, 0,
+                                        0, 0, 0.6;
+
+                                d4q_l << 0, 0, 0;
+                                d3q_l << 0, 0, 0;
+                                ddq_l << 0, (0), (0);
+                                dq_l << 0, (0), (0);
+                                q_l << l_hip_rad, l_knee_rad, l_ankle_rad;
+                                dq_e_l << (0 - l_hip_vel), (0 - l_knee_vel), (0 - l_ankle_vel);
+                                q_e_l << 0 - l_hip_rad, (0 - l_knee_rad), (0 - l_ankle_rad);
+
+                                C_term_l = left_SEA_dynamics.Coriolis_term(dq_l, q_l);
+                                F_term_l = left_SEA_dynamics.Friction_motor(dtheta_l);
+                                H_term_l = left_SEA_dynamics.H_term(q_l, ddq_l, ddtheta_l);
+                                G_term_l = left_SEA_dynamics.Gravity_term(q_l);
+                            }
+                                break;
+
+                            default:
+                                break;
+                        }
+
+
+                        compensation_l = left_G_Select_matrix * G_term_l + left_H_Select_matrix * H_term_l +
+                                         left_C_Select_matrix * C_term_l;
+                        compensation_r = right_G_Select_matrix * G_term_r + right_H_Select_matrix * H_term_r +
+                                         right_C_Select_matrix * C_term_r;
+
+                        //TODO: (1) calculate avaliable acc of link [!!!Not Available, but dynamics motor acc can be calculated]
+                        //      (2) adjust scaling factor of compensation ---> [Amostly OK]
+                        //      (3) zero-impedance mode ---> [OK]
+                        //      (4) vibration may caused by force-loop PD parameters ---> [OK, but the higher the frequency, the more significant]
+
+                        r_Hip_pd.pid_set_params(0.12, 0, 2);
+                        r_Knee_pd.pid_set_params(0.12, 0, 1.2);
+                        r_Ankle_pd.pid_set_params(0.3, 0, 1);
+
+                        l_Hip_pd.pid_set_params(0.12, 0, 2);
+                        l_Knee_pd.pid_set_params(0.08, 0, 1.2);
+                        l_Ankle_pd.pid_set_params(0.3, 0, 0.8);
+
+                        double r_hip_Impedance =
+                                compensation_r(0) + (B_r(0) * dq_e_r(0) + K_r(0) * q_e_r(0));
+                        double r_knee_Impedance =
+                                compensation_r(1) + (B_r(1) * dq_e_r(1) + K_r(1) * q_e_r(1));
+                        double r_ankle_Impedance =
+                                compensation_r(2) + (B_r(2) * dq_e_r(2) + K_r(2) * q_e_r(2));
+
+                        double l_hip_Impedance =
+                                compensation_l(0) + (B_l(0) * dq_e_l(0) + K_l(0) * q_e_l(0));
+                        double l_knee_Impedance =
+                                compensation_l(1) + (B_l(1) * dq_e_l(1) + K_l(1) * q_e_l(1));
+                        double l_ankle_Impedance =
+                                compensation_l(2) + (B_l(2) * dq_e_l(2) + K_l(2) * q_e_l(2));
+
+                        // Joint torque estimate based on spring deformation
+                        double r_hip_tau_spr = Ks_r(0, 0) * (r_hip_s_rad);
+                        double r_knee_tau_spr = Ks_r(1, 1) * (r_knee_s_rad);
+                        double r_ankle_tau_spr = Ks_r(2, 2) * (r_ankle_s_rad);
+
+                        double l_hip_tau_spr = Ks_l(0, 0) * (l_hip_s_rad);
+                        double l_knee_tau_spr = Ks_l(1, 1) * (l_knee_s_rad);
+                        double l_ankle_tau_spr = Ks_l(2, 2) * (l_ankle_s_rad);
+
+                        /**
+                         * In normal case, the overload ratio of nominal torque is [3]
+                         * But here allow exceed to [5]
+                         */
+                        double tau_pd_hip_r = r_Hip_pd.pid_control(
+                                r_hip_Impedance, r_hip_tau_spr, 1.5);
+
+                        double tau_pd_knee_r = r_Knee_pd.pid_control(
+                                r_knee_Impedance, r_knee_tau_spr, 1.5);
+
+                        double tau_pd_ankle_r = r_Ankle_pd.pid_control(
+                                r_ankle_Impedance, r_ankle_tau_spr, 1.2);
+
+                        double tau_pd_hip_l = l_Hip_pd.pid_control(
+                                l_hip_Impedance, l_hip_tau_spr, 1.5);
+
+                        double tau_pd_knee_l = l_Knee_pd.pid_control(
+                                l_knee_Impedance, l_knee_tau_spr, 1.5);
+
+                        double tau_pd_ankle_l = l_Ankle_pd.pid_control(
+                                l_ankle_Impedance, l_ankle_tau_spr, 1.2);
+
+                        int tau_dyn_thousand_1 = tau_Nm2thousand(tau_pd_hip_r, 0.3);
+                        int tau_dyn_thousand_2 = tau_Nm2thousand(tau_pd_knee_r, 0.3);
+                        int tau_dyn_thousand_3 = tau_Nm2thousand(tau_pd_ankle_r, 0.3);
+
+                        int tau_dyn_thousand_4 = tau_Nm2thousand(tau_pd_hip_l, 0.3);
+                        int tau_dyn_thousand_5 = tau_Nm2thousand(tau_pd_knee_l, 0.3);
+                        int tau_dyn_thousand_6 = tau_Nm2thousand(tau_pd_ankle_l, 0.3);
+
+                        if (RT_Controller.controller == Impedance_tracking) {
+                            /**
+                             * if detect curve reach HS point and GRF it is
+                             * ---> human motion is faster than(or equal to) exos's motion
+                             * ---> next period should be smaller
+                             *
+                             * Impedance_tracking -> Transparency
+                             * ===> only occur at the phase near [HS]
+                             * Transparency -> Impedance_tracking
+                             * ===> if GRF_HS catch up Curve_HS
+                             *
+                             * The main strategy is Impedance_tracking of whole Gait Cycle,
+                             * Transparency mode just hold on for several moment (maybe < 10% of Gc?)
+                             */
+                            if (!FLG_RIGHT_GC_1st)
+                                SwitchUp_OP_mode(right, CST);
+
+//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[r_hip], tau_dyn_thousand_1);
+//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[r_knee], tau_dyn_thousand_2);
+//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[r_ankle], tau_dyn_thousand_3);
+                        } else if (RT_Controller.controller == Transparency) {
+                            /**
+                             * if detect curve reach HS point but GRF not,
+                             * ---> exos should wait for limb
+                             * ---> all human joint get the initiative of exos active motion.
+                             */
+                            // ================ Right Limb ===================
+                            SwitchUp_OP_mode(right, CST);
+//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[r_hip], tau_dyn_thousand_1);
+//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[r_knee], tau_dyn_thousand_2);
+//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[r_ankle], tau_dyn_thousand_3);
+                        }
+
+                        if (LT_Controller.controller == Impedance_tracking) {
+                            /**
+                             * if detect curve reach HS point and GRF it is
+                             * ---> human motion is faster than(or equal to) exos's motion
+                             * ---> next period should be smaller
+                             *
+                             * Impedance_tracking -> Transparency
+                             * ===> only occur at the phase near [HS]
+                             * Transparency -> Impedance_tracking
+                             * ===> if GRF_HS catch up Curve_HS
+                             *
+                             * The main strategy is Impedance_tracking of whole Gait Cycle,
+                             * Transparency mode just hold on for several moment (maybe < 10% of Gc?)
+                             */
+                            if (LEFT_GC_START) {
+                                if (!FLG_LEFT_GC_1st) {
+                                    SwitchUp_OP_mode(left, CST);
+                                }
+//                                EC_WRITE_S16(domainRx_pd + offset.target_torque[l_hip], tau_dyn_thousand_4);
+//                                EC_WRITE_S16(domainRx_pd + offset.target_torque[l_knee], tau_dyn_thousand_5);
+//                                EC_WRITE_S16(domainRx_pd + offset.target_torque[l_ankle], tau_dyn_thousand_6);
+                            }
+                        } else if (LT_Controller.controller == Transparency) {
+                            /**
+                             * if detect curve reach HS point but GRF not,
+                             * ---> exos should wait for limb
+                             * ---> all human joint get the initiative of exos active motion.
+                             */
+                            // ================ Left Limb ===================
+                            SwitchUp_OP_mode(left, CST);
+//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[l_hip], tau_dyn_thousand_4);
+//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[l_knee], tau_dyn_thousand_5);
+//                            EC_WRITE_S16(domainRx_pd + offset.target_torque[l_ankle], tau_dyn_thousand_6);
+                        }
+
+                        /** ----------------------------------------------------------------------------------- */
+                        if (!(cycle_count % 10)) { // show message per 1 ms.
+                            std::cout << "===============================" << std::endl;
+                            std::cout << "task_working_Impedance_GRF" << std::endl;
+                            std::cout << "===============================" << std::endl;
+                            std::cout << "current P = [" << P_main << ',' << P_sub << ']' << std::endl;
+                            std::cout << "next P = " << P_update << std::endl;
+                            std::cout << "time: " << time_cnt / TASK_FREQUENCY << " [s] " << std::endl;
+
+                            std::cout << "q_r: " << std::endl;
+                            std::cout << q_r.format(PrettyPrint) << std::endl;
+
+                            std::cout << "Gait Matrix: " << std::endl;
+                            std::cout << GaitMatrix.format(PrettyPrint) << std::endl;
+
+                            switch (LT_Controller.controller) {
+                                case 0:
+                                    std::cout << "LT controller = Tracking" << std::endl;
+                                    break;
+                                case 1:
+                                    std::cout << "LT controller = Transparency" << std::endl;
+                                    break;
+                                default:
+                                    break;
+                            }
+
+                            switch (RT_Controller.controller) {
+                                case 0:
+                                    std::cout << "RT controller = Tracking" << std::endl;
+                                    break;
+                                case 1:
+                                    std::cout << "RT controller = Transparency" << std::endl;
+                                    break;
+                                default:
+                                    break;
+                            }
+
+
+                            for (int i = 0; i < active_num; i++) {
+                                unsigned int error_code;
+                                error_code = EC_READ_U16(domainTx_pd + offset.Error_code[i]);
+                                if (error_code != 0x0000) {
+                                    std::cout << "=================================== " << std::endl;
+                                    std::cout << "[" << i << "] slave reported error." << std::endl;
+                                    std::cout << "----------------------------------- " << std::endl;
+                                    ErrorCodeParse(error_code);
+                                }
+                            }
+
+                        }
+
+                        time_cnt++;
+
+                        right_outFile << hip_ref_rad_r << ',' << knee_ref_rad_r << ',' << ankle_ref_rad_r << ','
+                                      << r_hip_rad << ',' << r_knee_rad << ',' << r_ankle_rad << ','
+                                      << r_hip_m_rad << ',' << r_knee_m_rad << ',' << r_ankle_m_rad << ','
+                                      << tau_mot_3 << ',' << tau_mot_2 << ',' << tau_mot_1 << ','
+                                      << tau_pd_hip_r << ',' << tau_pd_knee_r << ',' << tau_pd_ankle_r << ','
+                                      << H_term_r(0) << ',' << H_term_r(1) << ',' << H_term_r(2) << ','
+                                      << compensation_r(0) << ',' << compensation_r(1) << ',' << compensation_r(2)
+                                      << ',' << LT_Controller.controller << ',' << RT_Controller.controller
+                                      << std::endl;
+
+                        right_velFile << hip_ref_vel_r << ',' << knee_ref_vel_r << ',' << ankle_ref_vel_r << ','
+                                      << r_hip_vel << ',' << r_knee_vel << ',' << r_ankle_vel << ','
+                                      << r_hip_m_vel << ',' << r_knee_m_vel << ',' << r_ankle_m_vel << ','
+                                      << tau_mot_1 << ',' << tau_mot_2 << ',' << tau_mot_3 << ','
+                                      << tau_pd_hip_r << ',' << tau_pd_knee_r << ',' << tau_pd_ankle_r << std::endl;
+
+                        right_save_file << r_hip_Impedance << ',' << r_hip_tau_spr << ',' << r_knee_Impedance << ','
+                                        << r_knee_tau_spr << ',' << r_ankle_Impedance << ',' << r_ankle_tau_spr
+                                        << ','
+                                        << H_term_r(0) << ',' << H_term_r(1) << ',' << H_term_r(2) << std::endl;
+
+                        right_filter_file << vel_RPM2rad(link_3_vel) << ',' << r_hip_vel << ',' << compensation_r(2)
+                                          << std::endl;
+
+                        left_outFile << hip_ref_rad_l << ',' << knee_ref_rad_l << ',' << Ankle_ref_rad_l << ','
+                                     << l_hip_rad << ',' << l_knee_rad << ',' << l_ankle_rad << ','
+                                     << l_hip_m_vel << ',' << l_knee_m_vel << ',' << l_ankle_m_vel << ','
+                                     << tau_mot_4 << ',' << tau_mot_5 << ',' << tau_mot_6 << ','
+                                     << hip_ref_acc_l << ',' << knee_ref_acc_l << ',' << Ankle_ref_acc_l
+                                     << std::endl;
+
+                        left_velFile << hip_ref_vel_l << ',' << knee_ref_vel_l << ',' << Ankle_ref_vel_l << ','
+                                     << l_hip_vel << ',' << l_knee_vel << ',' << l_ankle_vel << ','
+                                     << l_hip_m_vel << ',' << l_knee_m_vel << ',' << l_ankle_m_vel << ','
+                                     << tau_mot_4 << ',' << tau_mot_5 << ',' << tau_mot_6 << ','
+                                     << tau_pd_hip_l << ',' << tau_pd_knee_l << ',' << tau_pd_ankle_l << std::endl;
+
+                        left_save_file << l_hip_Impedance << ',' << l_hip_tau_spr << ',' << l_knee_Impedance << ','
+                                       << l_knee_tau_spr << ',' << l_ankle_Impedance << ',' << l_ankle_tau_spr
+                                       << ','
+                                       << lever_arm_3_rad - link_3_rad << std::endl;
+
+                        left_filter_file << vel_RPM2rad(link_5_vel) << ',' << l_knee_vel << std::endl;
+                    }
+
+                    if (POST_RESET)
+                        gTaskFsm.m_gtaskFSM = task_working_RESET;
+
+                    if (time_cnt >= 3000 * (20 + 0.35)) {
+                        EtherCAT_ONLINE = false;
+                        std::cout << "[Tracking Task is Finished.]" << std::endl;
+                        break;
+                    }
+
+                }
+                    break;
+
                 case task_working_Checking: {
                     /** A. Reset to default motor position(vertical direction as reference link) */
                     if (!(cycle_count % 10)) { // show message per 10 ms. (base freq = 1Khz)
@@ -1713,12 +2454,22 @@ void cyclic_task(int task_Cmd) {
                         std::cout << std::setprecision(3) << "l_knee  = " << l_knee_rad << std::endl;
                         std::cout << std::setprecision(3) << "l_ankle = " << l_ankle_rad << std::endl;
 
-                        std::cout << " ---- Servo Error Status ---- " << std::endl;
                         for (int i = 0; i < active_num; i++) {
                             unsigned int error_code;
                             error_code = EC_READ_U16(domainTx_pd + offset.Error_code[i]);
-                            ErrorCodeParse(error_code);
+                            if (error_code != 0x0000) {
+                                std::cout << "=================================== " << std::endl;
+                                std::cout << "[" << i << "] slave reported error." << std::endl;
+                                std::cout << "----------------------------------- " << std::endl;
+                                ErrorCodeParse(error_code);
+                            }
                         }
+
+                        std::cout << " ---- GRF sensor ----" << std::endl;
+                        std::cout << " GRF left 1: " << GRF_l_1 << std::endl;
+                        std::cout << " GRF left 2: " << GRF_l_2 << std::endl;
+                        Eigen::Matrix2d GRF_mat = UpdateGaitMatrix(GRF_l_1, GRF_l_2, GRF_l_1, GRF_l_2);
+                        std::cout << GRF_mat.format(PrettyPrint) << std::endl;
 
                     }
 
