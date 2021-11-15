@@ -77,7 +77,9 @@ void Dec2Hex(unsigned int decimal) {
 }
 
 inline int Pressure_Threshold(unsigned int In) {
-    if (In > 120)
+    // stand-by = 220
+
+    if (In > 220)
         return 1;
     else
         return 0;

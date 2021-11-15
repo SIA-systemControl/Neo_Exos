@@ -14,6 +14,7 @@ task_list g_task_list[] = {
         {task_working_Identification, "run task_working_Identification"},
         {task_working_Impedance,      "run task_working_Impedance"},
         {task_working_CSP_tracking,   "run task_working_CSP_tracking"},
+        {task_working_Impedance_GRF, "run task_working_Impedance_GRF"},
         {task_working_Checking,       "run task_working_Checking"},
 };
 
