@@ -10,12 +10,13 @@ pthread_mutex_t mutex;
 pthread_cond_t cond;
 
 task_list g_task_list[] = {
-        {task_working_RESET,          "run task_working_RESET"},
+        {task_working_RESET, "run task_working_RESET"},
         {task_working_Identification, "run task_working_Identification"},
-        {task_working_Impedance,      "run task_working_Impedance"},
-        {task_working_CSP_tracking,   "run task_working_CSP_tracking"},
+        {task_working_Impedance, "run task_working_Impedance"},
+        {task_working_CSP_tracking, "run task_working_CSP_tracking"},
         {task_working_Impedance_GRF, "run task_working_Impedance_GRF"},
-        {task_working_Checking,       "run task_working_Checking"},
+        {task_working_Transparency, "run task_working_Transparency"},
+        {task_working_Checking, "run task_working_Checking"},
 };
 
 void printf_task_str() {

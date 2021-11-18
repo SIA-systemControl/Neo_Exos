@@ -179,7 +179,7 @@ Eigen::Vector3d dynamics::H_term(Eigen::Vector3d q, Eigen::Vector3d ddq, Eigen::
     Eigen::Matrix3d H;
     H = M + SBS;
 
-    return H * ddq + S * ddtheta;
+    return H * ddq;
 }
 
 Eigen::Vector3d dynamics::Coriolis_term(Eigen::Vector3d dq, Eigen::Vector3d q) {
