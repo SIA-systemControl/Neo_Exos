@@ -27,6 +27,7 @@ typedef enum task_select {
     task_working_Impedance,     // 2
     task_working_CSP_tracking,  // 3
     task_working_Impedance_GRF, // 4
+    task_working_Transparency,
     task_working_Checking       // 5
 } task_select;
 

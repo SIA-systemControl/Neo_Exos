@@ -177,6 +177,7 @@ typedef enum _TaskFSM {
     task_working_Impedance,
     task_working_CSP_tracking,
     task_working_Impedance_GRF,
+    task_working_Transparency,
     task_working_Checking
 } TaskFSM;
 
