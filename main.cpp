@@ -5,18 +5,25 @@
 #include "Period.h"
 
 bool FLG_TASK_SELECT = true;
+bool FLG_Impedance_K_modified = true;
 
 pthread_mutex_t mutex;
 pthread_cond_t cond;
 
+struct command_para {
+    int task_cmd;
+    double impedance_K[3];
+    double impedance_B[3];
+};
+
 task_list g_task_list[] = {
-        {task_working_RESET, "run task_working_RESET"},
+        {task_working_RESET,          "run task_working_RESET"},
         {task_working_Identification, "run task_working_Identification"},
-        {task_working_Impedance, "run task_working_Impedance"},
-        {task_working_CSP_tracking, "run task_working_CSP_tracking"},
-        {task_working_Impedance_GRF, "run task_working_Impedance_GRF"},
-        {task_working_Transparency, "run task_working_Transparency"},
-        {task_working_Checking, "run task_working_Checking"},
+        {task_working_Impedance,      "run task_working_Impedance"},
+        {task_working_CSP_tracking,   "run task_working_CSP_tracking"},
+        {task_working_Impedance_GRF,  "run task_working_Impedance_GRF"},
+        {task_working_Transparency,   "run task_working_Transparency"},
+        {task_working_Checking,       "run task_working_Checking"},
 };
 
 void printf_task_str() {
@@ -43,6 +50,8 @@ int main(int argc, char *argv[]) {
     pthread_t Period;
     pthread_attr_t attr_Period;
 
+    struct command_para commandPara;
+
     int task_cmd = 0;
     int task_cmd_size = sizeof(g_task_list) / sizeof(g_task_list[0]);
 
@@ -66,18 +75,52 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    std::cout << " == Modified Impedance K ? (y/n) " << std::endl;
+    char Confirm_Modified_K[2] = {0};
+
+    while (FLG_Impedance_K_modified) {
+        fgets(Confirm_Modified_K, 2, stdin);
+        if (Confirm_Modified_K[0] == 'y') {
+            std::cout << "Enter modified Impedance K_hip: " << std::endl;
+            std::cin >> commandPara.impedance_K[0];
+
+            std::cout << "Enter modified Impedance K_knee: " << std::endl;
+            std::cin >> commandPara.impedance_K[1];
+
+            std::cout << "Enter modified Impedance K_ankle: " << std::endl;
+            std::cin >> commandPara.impedance_K[2];
+
+            commandPara.impedance_B[0] = 0;
+            FLG_Impedance_K_modified = false;
+        } else if (Confirm_Modified_K[0] == 'n') {
+            commandPara.impedance_K[0] = 0;
+
+            commandPara.impedance_B[0] = 0;
+            std::cout << "Use default parameters." << std::endl;
+            FLG_Impedance_K_modified = false;
+        }
+
+    }
+
     std::cout << "===================================================" << std::endl;
     std::cout << "Selected task_cmd = " << g_task_list[task_cmd].info << std::endl;
+    if (Confirm_Modified_K[0] == 'y') {
+        std::cout << "Modified Impedance para: [" << commandPara.impedance_K[0] << ',' << commandPara.impedance_K[1]
+                  << ',' << commandPara.impedance_K[2] << ']' << std::endl;
+    } else
+        std::cout << "Impedance para using default configure: [80,80,30]" << std::endl;
     std::cout << "===================================================" << std::endl;
     for (int i = 0; i < 3; i++) {
         std::cout << "Confirm input task_cmd in [" << 3 - i << "] second(s)." << std::endl;
         usleep(1000000);
     }
 
+    commandPara.task_cmd = task_cmd;
+
     if (pthread_attr_init(&attr_robot) != 0)
         perror("[ROBOT-THREAD INIT FAILURE!]");
 
-    if (pthread_create(&robot, &attr_robot, robotcontrol, (void *) &task_cmd) != 0) {
+    if (pthread_create(&robot, &attr_robot, robotcontrol, (void *) &commandPara) != 0) {
         perror("[ROBOT-THREAD CREATE FAILURE!]");
         return EXIT_FAILURE;
     }

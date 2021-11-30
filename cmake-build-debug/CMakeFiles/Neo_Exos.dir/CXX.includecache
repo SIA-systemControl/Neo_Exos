@@ -14,26 +14,6 @@ cmath
 cmath
 -
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Period.cpp
-Period.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Period.h
-
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Period.h
-termio.h
--
-csignal
--
-unistd.h
--
-fcntl.h
--
-cstring
--
-cstdlib
--
-cstdio
--
-
 /home/yc/CLionProjects/SIA_team/Neo_Exos/Unit.h
 
 /home/yc/CLionProjects/SIA_team/Neo_Exos/Utils.h
@@ -121,16 +101,6 @@ vector
 -
 timeInterval.h
 /home/yc/CLionProjects/SIA_team/Neo_Exos/timeInterval.h
-
-/home/yc/CLionProjects/SIA_team/Neo_Exos/main.cpp
-iostream
--
-fstream
--
-sstream
--
-Period.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Period.h
 
 /home/yc/CLionProjects/SIA_team/Neo_Exos/timeInterval.h
 iostream
