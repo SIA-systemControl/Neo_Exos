@@ -38,4 +38,6 @@ init_cnt set_init_cnt(int data[]){
     return initCnt;
 }
 
+
+
 #endif //CSVREADER_DATAPARSE_H
