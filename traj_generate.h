@@ -46,6 +46,16 @@ double identify_3rd(int curve_count, double a0, const double* a, const double* b
 
 double identify_4th(int curve_count, double a0, const double* a, const double* b ,double w);
 
+/**
+ * for NoLoad2Sit trajectory
+ */
 
+double Stand2Sit_position(double scaleFactor, int curve_count, double a0, const double* a, const double *b, double w);
+
+double Stand2Sit_velocity(double scaleFactor, int curve_count, double a0, const double* a, const double *b, double w);
+
+double Stand2Sit_Ankle_pos(double scaleFactor, int curve_count, double a0, const double* a, const double *b, double w);
+
+double Stand2Sit_Ankle_vel(double scaleFactor, int curve_count, double a0, const double* a, const double *b, double w);
 
 #endif //MATRIX_DYNAMICS_TRAJ_GENERATE_H

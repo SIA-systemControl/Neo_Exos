@@ -1,4 +1,4 @@
-# Install script for directory: /home/yc/CLionProjects/SIA_team/Neo_Exos
+# Install script for directory: /home/yc/CLionProjects/Neo_Exos_update/Neo_Exos
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/yc/CLionProjects/SIA_team/Neo_Exos/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/cmake-build-debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

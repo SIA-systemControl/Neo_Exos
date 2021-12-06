@@ -13,7 +13,9 @@
 class csvReader{
 public:
     csvReader(const char *);
+    int isExist();
     int readLine();
+    int isEmpty();
     int data[12];
 private:
     std::ifstream _csvInput;
@@ -21,6 +23,18 @@ private:
 
 csvReader::csvReader(const char * path) {
     _csvInput.open(path);
+}
+
+int csvReader::isExist() {
+    bool FLG = _csvInput.good();
+    return FLG;
+}
+
+int csvReader::isEmpty() {
+    bool FLG = false;
+    if(data[0] == 0 || data[1] == 0 || data[2] == 0)
+        FLG = true;
+    return FLG;
 }
 
 int csvReader::readLine() {

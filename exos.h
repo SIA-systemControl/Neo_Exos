@@ -91,10 +91,10 @@
 
 #define left_hip_init_rad -0.07
 #define left_knee_init_rad -0.15
-#define left_ankle_init_rad 0.14
+#define left_ankle_init_rad 0.2
 #define right_hip_init_rad -0.07
 #define right_knee_init_rad -0.15
-#define right_ankle_init_rad 0.14
+#define right_ankle_init_rad 0.2
 
 #endif
 
@@ -156,6 +156,11 @@ static ec_sdo_request_t *sdo[joint_num];
 
 #define Synapticon  0x000022d2,0x00000201// vendor id + product id
 
+typedef struct Joint_List {
+    int slave_id;
+    unsigned char info[20];
+} Joint_List;
+
 // EtherCAT state machine enum
 typedef enum _workingStatus {
     sys_working_POWER_ON,
@@ -173,9 +178,11 @@ typedef struct _GsysRunningParm {
 // OP task FSM
 typedef enum _TaskFSM {
     task_working_RESET,
+    task_working_CALIBRATION,
     task_working_Identification,
     task_working_Impedance,
     task_working_CSP_tracking,
+    task_working_Noload2Sit,
     task_working_Impedance_GRF,
     task_working_Transparency,
     task_working_Checking
@@ -251,6 +258,26 @@ double i_a_ankle[10] = {0.2134, -0.2709, -0.1218, 0.2742, -0.1078, 0.2139, -0.70
 double i_b_ankle[10] = {-0.0533, 0.3066, -0.0668, -0.2199, -1.0236, -0.9524, -0.3766, 0.1015, -0.1240, -0.0195};
 double i_w_ankle = 2 * Pi * 0.1;
 double i_a0_ankle = 0.9358;
+
+/**
+ * FOR STAND2SIT
+ */
+
+double sit_a_hip[2] = {4.137,-0.551};
+double sit_a_knee[2] = {-4.137,0.551};
+double sit_a_ankle[4] = {-0.0977,0.00304,-0.00520,0.00445};
+double sit_b_hip[2] = {4.478,-1.837};
+double sit_b_knee[2] = {-4.478,1.837};
+double sit_b_ankle[4] = {-0.01782,0.03163,0.0134,-0.00118};
+double sit_a0_hip = -3.56;
+double sit_a0_knee = 3.56;
+double sit_a0_ankle = 0.06502;
+double sit_w  = 0.000358;
+double sit_w_ankle = 0.001176;
+
+/**
+ * ==========================================================
+ */
 
 int P_main = 3000; // default time of Gait Cycle [ms]
 int P_sub = 3000;
@@ -752,6 +779,11 @@ void SwitchUp_OP_mode(bool Limb_side, int Mode) {
         }
     }
 
+}
+
+void SwitchUp_OP_mode(int Mode){
+    for(int i = 0; i< 6; i++)
+        SwitchUp_OP_mode(i,Mode);
 }
 
 #endif //EXOS_IMPEDANCECONTROL_EXOS_H

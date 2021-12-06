@@ -10,7 +10,7 @@ LINK_DIRECTORIES(/opt/etherlab/lib)
 INCLUDE_DIRECTORIES(./LpSensor-1.3.5-Linux-x86-64/include)
 LINK_DIRECTORIES(./LpSensor-1.3.5-Linux-x86-64/lib)
 
-add_executable(Neo_Exos main.cpp exos.h exos.cpp dynamics.h PID.h traj_generate.h traj_generate.cpp Utils.h Unit.h timeInterval.cpp timeInterval.h Period.h Period.cpp LowPassFilter.hpp LowPassFilter.cpp csvReader.hpp dataParse.hpp)
+add_executable(Neo_Exos main.cpp exos.h exos.cpp dynamics.h PID.h traj_generate.h traj_generate.cpp Utils.h Unit.h timeInterval.cpp timeInterval.h Period.h Period.cpp LowPassFilter.hpp LowPassFilter.cpp csvReader.hpp dataParse.hpp calibration.h calibration.cpp)
 
 target_link_libraries(${PROJECT_NAME} ethercat pthread)
 #LPMS_IMU

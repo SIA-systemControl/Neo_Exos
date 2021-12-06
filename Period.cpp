@@ -25,6 +25,7 @@ void KeyDetect() {
     tcsetattr(kfd, TCSANOW, &raw);
 
     puts("=========================");
+    puts("       [DISABLE NOW]");
     puts("  READING FROM KEYBOARD  ");
     puts("=========================");
 
