@@ -6,21 +6,21 @@
 
 #IncludeRegexTransform: 
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/LowPassFilter.hpp
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/LowPassFilter.hpp
 cmath
 -
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/PID.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/PID.h
 cmath
 -
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Unit.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/Unit.h
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Utils.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/Utils.h
 Eigen/Dense
 -
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/csvReader.hpp
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/csvReader.hpp
 fstream
 -
 string
@@ -28,9 +28,9 @@ string
 sstream
 -
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/dataParse.hpp
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/dataParse.hpp
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/dynamics.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/dynamics.h
 cmath
 -
 Eigen/Dense
@@ -38,19 +38,19 @@ Eigen/Dense
 eigen3/unsupported/Eigen/MatrixFunctions
 -
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/exos.cpp
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/exos.cpp
 iomanip
 -
 exos.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/exos.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/exos.h
 csvReader.hpp
-/home/yc/CLionProjects/SIA_team/Neo_Exos/csvReader.hpp
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/csvReader.hpp
 dataParse.hpp
-/home/yc/CLionProjects/SIA_team/Neo_Exos/dataParse.hpp
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/dataParse.hpp
 LowPassFilter.hpp
-/home/yc/CLionProjects/SIA_team/Neo_Exos/LowPassFilter.hpp
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/LowPassFilter.hpp
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/exos.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/exos.h
 stdlib.h
 -
 termio.h
@@ -60,35 +60,35 @@ iostream
 errno.h
 -
 signal.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/signal.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/signal.h
 stdio.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/stdio.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/stdio.h
 sys/resource.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/sys/resource.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/sys/resource.h
 sys/time.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/sys/time.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/sys/time.h
 sys/types.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/sys/types.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/sys/types.h
 unistd.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/unistd.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/unistd.h
 sys/mman.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/sys/mman.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/sys/mman.h
 pthread.h
 -
 cmath
 -
 Utils.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Utils.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/Utils.h
 Unit.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/Unit.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/Unit.h
 traj_generate.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/traj_generate.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/traj_generate.h
 PID.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/PID.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/PID.h
 dynamics.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/dynamics.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/dynamics.h
 ecrt.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/ecrt.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/ecrt.h
 cstring
 -
 vector
@@ -100,9 +100,9 @@ sstream
 vector
 -
 timeInterval.h
-/home/yc/CLionProjects/SIA_team/Neo_Exos/timeInterval.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/timeInterval.h
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/timeInterval.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/timeInterval.h
 iostream
 -
 stack
@@ -110,7 +110,7 @@ stack
 ctime
 -
 
-/home/yc/CLionProjects/SIA_team/Neo_Exos/traj_generate.h
+/home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/traj_generate.h
 
 /opt/etherlab/include/ecrt.h
 asm/byteorder.h

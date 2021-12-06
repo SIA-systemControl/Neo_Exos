@@ -15,8 +15,6 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/CMakeCXXInformation.cmake"
   "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake"
   "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/CMakeCommonLanguageInclude.cmake"
-  "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/CMakeExtraGeneratorDetermineCompilerMacrosAndIncludeDirs.cmake"
-  "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/CMakeFindCodeBlocks.cmake"
   "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/CMakeGenericSystem.cmake"
   "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/CMakeInitializeConfigs.cmake"
   "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/CMakeLanguageInformation.cmake"
@@ -32,7 +30,6 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/Platform/Linux-GNU.cmake"
   "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/Platform/Linux.cmake"
   "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/Platform/UnixPaths.cmake"
-  "/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/share/cmake-3.16/Modules/ProcessorCount.cmake"
   )
 
 # The corresponding makefile is:
