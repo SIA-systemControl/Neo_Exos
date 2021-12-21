@@ -5,7 +5,7 @@
 
 int kfd = 0;
 struct termios cooked, raw;
-int P_update = 3000;
+int P_update = 2500;
 char c;
 extern bool FLG_pthread_online;
 
