@@ -5,15 +5,9 @@
 
 int kfd = 0;
 struct termios cooked, raw;
-int P_update = 3000;
+int P_update = 2500;
 char c;
 extern bool FLG_pthread_online;
-
-//void quit(int sig) {
-//    (void) sig;
-//    tcsetattr(kfd, TCSANOW, &cooked);
-//    exit(0);
-//}
 
 void *PeriodControl(void *arg) {
 //    signal(SIGINT, quit);
@@ -31,6 +25,7 @@ void KeyDetect() {
     tcsetattr(kfd, TCSANOW, &raw);
 
     puts("=========================");
+    puts("       [DISABLE NOW]");
     puts("  READING FROM KEYBOARD  ");
     puts("=========================");
 
@@ -39,7 +34,6 @@ void KeyDetect() {
             perror("read():");
             exit(-1);
         }
-
 
         switch (c) {
             case KEY_UP: {

@@ -77,7 +77,9 @@ void Dec2Hex(unsigned int decimal) {
 }
 
 inline int Pressure_Threshold(unsigned int In) {
-    if (In > 120)
+    // stand-by = 220
+
+    if (In > 220)
         return 1;
     else
         return 0;
@@ -195,5 +197,29 @@ int GaitMatrixParse(Eigen::Matrix2d GaitMatrix) {
 //    if (MatrixRet == HSHO && GaitCycle > 0.1)
 //        gMFSM.m_gaitMatrixFsm = HS_HO;
 //}
+
+inline void ErrorCodeParse(unsigned int E_code){
+    switch (E_code) {
+        case 0x0000:
+            std::cout << " No Fault." << std::endl;
+            break;
+        case 0x7500:
+            std::cout << " Communication Error." << std::endl;
+            break;
+        case 0x7300:
+            std::cout << " Sensor Error(CRC or AckBits)." << std::endl;
+            break;
+        case 0x2220:
+            std::cout << " Continuous over current" << std::endl;
+            break;
+        case 0x3331:
+            std::cout << " Field circuit interrupted" << std::endl;
+            break;
+        default:
+            std::cout << " Other Error(ref to CiA-402 DataSheet)" << std::endl;
+            break;
+    }
+}
+
 
 #endif //EXOS_IMPEDANCE_NEW_UTILS_H

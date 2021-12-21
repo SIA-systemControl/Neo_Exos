@@ -16,13 +16,13 @@
  */
 double base_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0);
 
-double differentia_1st_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
+double differential_1st_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
 
-double differentia_2ed_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
+double differential_2ed_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
 
-double differentia_3rd_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
+double differential_3rd_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
 
-double differentia_4th_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
+double differential_4th_Fourier_8th(double GaitCycle, const double *a, const double *b, double w, double q0, double P);
 
 double sineWave(int curve_count, double freq, double amp);
 
@@ -46,6 +46,16 @@ double identify_3rd(int curve_count, double a0, const double* a, const double* b
 
 double identify_4th(int curve_count, double a0, const double* a, const double* b ,double w);
 
+/**
+ * for NoLoad2Sit trajectory
+ */
 
+double Stand2Sit_position(double scaleFactor, int curve_count, double a0, const double* a, const double *b, double w);
+
+double Stand2Sit_velocity(double scaleFactor, int curve_count, double a0, const double* a, const double *b, double w);
+
+double Stand2Sit_Ankle_pos(double scaleFactor, int curve_count, double a0, const double* a, const double *b, double w);
+
+double Stand2Sit_Ankle_vel(double scaleFactor, int curve_count, double a0, const double* a, const double *b, double w);
 
 #endif //MATRIX_DYNAMICS_TRAJ_GENERATE_H

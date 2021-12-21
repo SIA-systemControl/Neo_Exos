@@ -48,10 +48,10 @@ RM = /home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/yc/CLionProjects/Neo_Exos
+CMAKE_SOURCE_DIR = /home/yc/CLionProjects/Neo_Exos_update/Neo_Exos
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/yc/CLionProjects/Neo_Exos/cmake-build-debug
+CMAKE_BINARY_DIR = /home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/cmake-build-debug
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles /home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/cmake-build-debug/CMakeFiles /home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/cmake-build-debug/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/Neo_Exos/cmake-build-debug/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/cmake-build-debug/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -176,6 +176,33 @@ Period.s: Period.cpp.s
 Period.cpp.s:
 	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/Period.cpp.s
 .PHONY : Period.cpp.s
+
+calibration.o: calibration.cpp.o
+
+.PHONY : calibration.o
+
+# target to build an object file
+calibration.cpp.o:
+	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/calibration.cpp.o
+.PHONY : calibration.cpp.o
+
+calibration.i: calibration.cpp.i
+
+.PHONY : calibration.i
+
+# target to preprocess a source file
+calibration.cpp.i:
+	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/calibration.cpp.i
+.PHONY : calibration.cpp.i
+
+calibration.s: calibration.cpp.s
+
+.PHONY : calibration.s
+
+# target to generate assembly for a file
+calibration.cpp.s:
+	$(MAKE) -f CMakeFiles/Neo_Exos.dir/build.make CMakeFiles/Neo_Exos.dir/calibration.cpp.s
+.PHONY : calibration.cpp.s
 
 exos.o: exos.cpp.o
 
@@ -300,6 +327,9 @@ help:
 	@echo "... Period.o"
 	@echo "... Period.i"
 	@echo "... Period.s"
+	@echo "... calibration.o"
+	@echo "... calibration.i"
+	@echo "... calibration.s"
 	@echo "... exos.o"
 	@echo "... exos.i"
 	@echo "... exos.s"

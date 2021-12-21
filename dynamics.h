@@ -9,6 +9,8 @@
 #include <Eigen/Dense>
 #include <eigen3/unsupported/Eigen/MatrixFunctions>
 
+Eigen::IOFormat PrettyPrint(4, 0, ",", "\n", "[", "]", "[", "]");
+
 struct DiscretedMatrix {
     Eigen::Matrix3d Ad;
     Eigen::Vector3d Bd;
@@ -60,7 +62,7 @@ public:
     Eigen::Vector3d motor_dynamics(Eigen::Vector3d ddq, Eigen::Vector3d ddtheta, Eigen::Vector3d dtheta);
 
     Eigen::Vector3d
-    tau_spring(Eigen::Vector3d tau_m, Eigen::Vector3d ddq, Eigen::Vector3d ddtheta, Eigen::Vector3d dtheta);
+    tau_spring_dyn(Eigen::Vector3d tau_m, Eigen::Vector3d ddq, Eigen::Vector3d ddtheta, Eigen::Vector3d dtheta);
 
     Eigen::Vector3d
     feedforward_dynamics(Eigen::Vector3d d4q, Eigen::Vector3d d3q, Eigen::Vector3d ddq, Eigen::Vector3d dq,
@@ -75,22 +77,6 @@ public:
  * identification para : 21/07/06
  */
 dynamics::dynamics() {
-//    L1zz = 0.782;lx1 = 2.0985;
-//    L2zz = 0.2870;lx2 = 0.8246;
-//    L3zz = 0.0033;lx3 = 0.0041;
-//    m1 = 4.52;m2 = 1.95;m3 = 0.95 + 4.09;
-//    m1_r = 0.37;m2_r = 0.37;m3_r = 0.23;
-//    N1 = 120;N2 = 80;N3 = 80;
-//    grav_acc = 9.81;
-//    fv1 = 0.2753;fc1 = 0.4823;
-//    fv2 = -0.5029;fc2 = 0.3106;
-//    fv3 = -2.3965;fc3 = 0.6854;
-//    fv1_m = 21.5333;fc1_m = 9.9352;
-//    fv2_m = 7.3022;fc2_m = 2.8866;
-//    fv3_m = 5.4917;fc3_m = 3.6898;
-//    L1 = 0.4;L2 = 0.395;
-//    Im1 = 0.8786;Im2 = 0.4693;Im3 = 0.0150;
-
     L1zz = -0.304;
     lx1 = 0.1567;
     L2zz = 0.0002;
@@ -193,7 +179,7 @@ Eigen::Vector3d dynamics::H_term(Eigen::Vector3d q, Eigen::Vector3d ddq, Eigen::
     Eigen::Matrix3d H;
     H = M + SBS;
 
-    return H * ddq + S * ddtheta;
+    return H * ddq;
 }
 
 Eigen::Vector3d dynamics::Coriolis_term(Eigen::Vector3d dq, Eigen::Vector3d q) {
@@ -217,10 +203,11 @@ Eigen::Vector3d dynamics::Coriolis_term(Eigen::Vector3d dq, Eigen::Vector3d q) {
     C3 = lx3 * (L1 * sin(q2 + q3) * pow(dq1, 2) + L2 * sin(q3) * pow(dq1, 2) + L2 * sin(q3) * pow(dq2, 2) +
                 2 * L2 * sin(q3) * dq1 * dq2);
 
-    Eigen::Vector3d Coriolis;
-    Coriolis << C1, C2, C3;
+    Eigen::Vector3d coriolis_term;
+    coriolis_term << C1, C2, C3;
+    Coriolis = coriolis_term;
 
-    return Coriolis;
+    return coriolis_term;
 }
 
 Eigen::Vector3d dynamics::Gravity_term(Eigen::Vector3d q) {
@@ -384,7 +371,7 @@ Eigen::Vector3d dynamics::motor_dynamics(Eigen::Vector3d ddq, Eigen::Vector3d dd
 }
 
 Eigen::Vector3d
-dynamics::tau_spring(Eigen::Vector3d tau_m, Eigen::Vector3d ddq, Eigen::Vector3d ddtheta, Eigen::Vector3d dtheta) {
+dynamics::tau_spring_dyn(Eigen::Vector3d tau_m, Eigen::Vector3d ddq, Eigen::Vector3d ddtheta, Eigen::Vector3d dtheta) {
     friction_m = dynamics::Friction_motor(dtheta);
     Eigen::Matrix3d S;
     S << 0, Im2 / N2, Im3 / N3,
@@ -715,8 +702,8 @@ dynamics::dynamics(bool part) {
         lx2 = 1.0046;
         L3zz = 0.0099;
         lx3 = 0.1285;
-        m1 = 2.1;
-        m2 = 1.55;
+        m1 = 3;
+        m2 = 2.55;
         m3 = 1.14;
         m1_r = 0.3;
         m2_r = 0.3;

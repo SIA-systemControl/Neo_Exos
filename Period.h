@@ -23,12 +23,14 @@ extern void SIG_handle(int sig);
 
 typedef enum task_select {
     task_working_RESET,         // 0
-    task_working_Control,       // 1
+    task_working_CALIBRATION,   // 1
     task_working_Identification,// 2
-    task_working_Impedance,        // 3
-    task_working_Sit2Stand,     // 4
-    task_working_CSP_tracking,  // 5
-    task_working_Checking       // 6
+    task_working_Impedance,     // 3
+    task_working_CSP_tracking,  // 4
+    task_working_Noload2Sit,    // 5
+    task_working_Impedance_GRF, // 6
+    task_working_Transparency,  // 7
+    task_working_Checking       // 8
 } task_select;
 
 typedef struct task_list {

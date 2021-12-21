@@ -49,9 +49,12 @@
 #include "timeInterval.h"
 
 
-
 #define left  true
 #define right false
+
+//#define CURVE_1 //old curve
+//#define CURVE_2 //IMU curve
+#define CURVE_3 //public dataset
 
 //#define Drag_Impendance
 #define Tracking_Impendance
@@ -88,34 +91,22 @@
 #define r_knee  1
 #define r_ankle 0
 
-/** ------ Left Part ----- **/
-//#define left_hip_init_motor_cnt 29976
-//#define left_hip_init_spring_cnt 1800
-//
-//#define left_knee_init_motor_cnt 94502
-//#define left_knee_init_spring_cnt 2702
-//
-//#define left_ankle_init_motor_cnt 76454
-//#define left_ankle_init_spring_cnt 1101
-//
-///** ------ Right Part ----- **/
-//#define right_hip_init_motor_cnt -33125
-//#define right_hip_init_spring_cnt 1312
-//
-//#define right_knee_init_motor_cnt -51846
-//#define right_knee_init_spring_cnt 244
-//
-//#define right_ankle_init_motor_cnt -59505
-//#define right_ankle_init_spring_cnt 3977
-
 #ifdef Tracking_Impendance
 
-#define left_hip_init_rad -0.07
-#define left_knee_init_rad -0.15
-#define left_ankle_init_rad 0.14
-#define right_hip_init_rad -0.07
-#define right_knee_init_rad -0.15
-#define right_ankle_init_rad 0.14
+//#define left_hip_init_rad -0.07
+//#define left_knee_init_rad -0.15
+//#define left_ankle_init_rad 0.2
+//#define right_hip_init_rad -0.07
+//#define right_knee_init_rad -0.15
+//#define right_ankle_init_rad 0.2
+
+#define left_hip_init_rad 0.07
+#define left_knee_init_rad -0.06
+#define left_ankle_init_rad 0.1
+#define right_hip_init_rad 0.07
+#define right_knee_init_rad -0.06
+#define right_ankle_init_rad 0.1
+
 
 #endif
 
@@ -177,6 +168,11 @@ static ec_sdo_request_t *sdo[joint_num];
 
 #define Synapticon  0x000022d2,0x00000201// vendor id + product id
 
+typedef struct Joint_List {
+    int slave_id;
+    unsigned char info[20];
+} Joint_List;
+
 // EtherCAT state machine enum
 typedef enum _workingStatus {
     sys_working_POWER_ON,
@@ -194,11 +190,13 @@ typedef struct _GsysRunningParm {
 // OP task FSM
 typedef enum _TaskFSM {
     task_working_RESET,
-    task_working_Control,
+    task_working_CALIBRATION,
     task_working_Identification,
     task_working_Impedance,
-    task_working_Sit2Stand,
     task_working_CSP_tracking,
+    task_working_Noload2Sit,
+    task_working_Impedance_GRF,
+    task_working_Transparency,
     task_working_Checking
 } TaskFSM;
 
@@ -206,8 +204,20 @@ typedef struct _GTaskFSM {
     TaskFSM m_gtaskFSM;
 } GTaskFSM;
 
+typedef enum _Controller {
+    Impedance_tracking,
+    Transparency
+} Controller;
+
+typedef struct _GaitController {
+    Controller controller;
+} gaitController;
+
+
 GsysRunningParm gSysRunning;
 GTaskFSM gTaskFsm;
+gaitController LT_Controller;
+gaitController RT_Controller;
 
 int SERVE_OP = 0;
 int ecstate = 0;
@@ -216,15 +226,19 @@ int reset_step = 0;
 /**
  * Fourier Series of Joint angle (for trajectory)
  */
+
+
+#ifdef CURVE_1
 double w_hip = 6.27659139567477;  // angle freq  = 2*pi*f where f is base freq
 double w_knee = w_hip;  // angle freq  = 2*pi*f where f is base freq
 double w_ankle = w_hip;  // angle freq  = 2*pi*f where f is base freq
 
-double a_hip[8] = {0.308750228166298, -0.0301760062107781, 0.00505607355750842, 0.00159201009938250,
-                   -0.00281684827129251, 0.00129439626305321, -0.00504290840263287, 0.00382003697292678};
-double b_hip[8] = {-0.0917919985841033, -0.0229946587230083, 0.0228749586595578, -8.60002514422098e-05,
-                   0.00199416878210645, -0.00444905211999233, 0.00132143317171056, 0.000876821564775400};
-double a0_hip = 0.187072145486077;
+double a_hip[8] = {0.295123922790271, -0.0396807769917732, 0.00295426462630461, 0.00655880115321634,
+                   0.00595258148856191, 0.00995653597100669, 0.000482635171710305, 0.00602219880116759};
+
+double b_hip[8] = {-0.0827336085549393, -0.00965989533825686, 0.0381526852994244, 0.0123514227218906,
+                   0.00887374371529301, -0.00311873317036715, -0.000910621647840406, -0.00157410247062698};
+double a0_hip = 0.1799;
 
 double a_knee[8] = {0.0985635337735540, 0.278740647777703, 0.0286360377526829, 0.0250057934881560, 0.0219855831069594,
                     0.000554154299564611, 0.00690268692893109, 0.000709369274812899};
@@ -237,6 +251,45 @@ double a_ankle[8] = {-0.109863815437901, -0.00833917060475227, -0.09895988580207
 double b_ankle[8] = {0.0549542830785040, -0.109350901714820, 0.0184124040787744, 0.0114596100947102,
                      -0.0141854746312045, 0.0107960677657798, -0.00738513480814346, -0.000616125357164900};
 double a0_ankle = -0.0364079750372623;
+#endif
+
+#ifdef CURVE_2
+double w_hip = 6.29;  // angle freq  = 2*pi*f where f is base freq
+double w_knee = 6.3;  // angle freq  = 2*pi*f where f is base freq
+double w_ankle = 6.207;  // angle freq  = 2*pi*f where f is base freq
+double a_hip[8] = {0.2721, -0.0704, 0.0005, -0.0019, 0.0039, 0.0060, 0, 0};
+
+double b_hip[8] = {-0.1089, 0.0047, 0.0311, -0.0010, 0.0071, -0.0014, 0, 0};
+double a0_hip = 0.1252;
+
+double a_knee[8] = {0.1604, 0.2552, -0.0185, 0.0075, -0.0177, -0.0095, 0, 0};
+double b_knee[8] = {0.3534, -0.2084, -0.0844, -0.0230, -0.0178, -0.0011, 0, 0};
+double a0_knee = -0.4885;
+
+double a_ankle[8] = {0.0174, -0.0006, -0.0488, 0.0394, -0.0207, 0.0143, -0.0045, -0.0006};
+double b_ankle[8] = {0.1429, -0.1078, 0.0231, -0.0302, -0.0169, -0.0008, -0.0166, 0.0052};
+double a0_ankle = 0.0938;
+#endif
+
+#ifdef CURVE_3
+
+double w_hip = 6.517;  // angle freq  = 2*pi*f where f is base freq
+double w_knee = 6.246;  // angle freq  = 2*pi*f where f is base freq
+double w_ankle = 6.2;  // angle freq  = 2*pi*f where f is base freq
+double a_hip[8] = {0.3446  , -0.03227 ,-0.01878 , 0.00119  ,-0.006187 ,-0.00256  , 0, 0 };
+double b_hip[8] = {-0.01189, -0.04217 , 0.02241 ,-0.001037 ,-0.001478 ,-0.0003051, 0, 0 };
+double a0_hip = 0.2458;
+
+double a_knee[8] = {0.04588 , 0.2734  ,0.02045 ,0.01562  ,0.01066 , -0.003288 ,0 ,0};
+double b_knee[8] = {0.3808  ,  -0.108   , -0.09075 , -0.007642 , -0.01503 , -0.003579 ,0 ,0};
+double a0_knee = -0.3574;
+
+double a_ankle[8] = {-0.04202 ,0.00806 ,-0.06863 ,0.03513  ,-0.0007702 ,0.008006 ,0.01149   ,0.002248};
+double b_ankle[8] = {0.07892  ,-0.1166 ,0.01499  ,0.003162 ,-0.01819   ,0.008057 ,-0.005009 ,0.001317};
+double a0_ankle = 0.05508;
+
+
+#endif
 
 /**
  * FOR IDENTIFY FOURIER PARAMETERS
@@ -257,8 +310,28 @@ double i_b_ankle[10] = {-0.0533, 0.3066, -0.0668, -0.2199, -1.0236, -0.9524, -0.
 double i_w_ankle = 2 * Pi * 0.1;
 double i_a0_ankle = 0.9358;
 
-int P_main = 3000; // time of Gait Cycle [ms]
-int P_sub = 3000;
+/**
+ * FOR STAND2SIT
+ */
+
+double sit_a_hip[2] = {4.137, -0.551};
+double sit_a_knee[2] = {-4.137, 0.551};
+double sit_a_ankle[4] = {-0.0977, 0.00304, -0.00520, 0.00445};
+double sit_b_hip[2] = {4.478, -1.837};
+double sit_b_knee[2] = {-4.478, 1.837};
+double sit_b_ankle[4] = {-0.01782, 0.03163, 0.0134, -0.00118};
+double sit_a0_hip = -3.56;
+double sit_a0_knee = 3.56;
+double sit_a0_ankle = 0.06502;
+double sit_w = 0.000358;
+double sit_w_ankle = 0.001176;
+
+/**
+ * ==========================================================
+ */
+
+int P_main = 2500; // default time of Gait Cycle [ms]
+int P_sub = 2500;
 
 // Offsets for PDO entries
 static struct {
@@ -356,8 +429,6 @@ ec_pdo_entry_reg_t domain_Tx_reg[] = {
 
         {SynapticonSlave1, Synapticon, 0x230A, 0, &offset.second_position[r_hip]},
         {SynapticonSlave1, Synapticon, 0x230B, 0, &offset.second_velocity[r_hip]},
-        {SynapticonSlave1, Synapticon, 0x2401, 0, &offset.analog_in1[r_hip]},
-        {SynapticonSlave1, Synapticon, 0x2402, 0, &offset.analog_in2[r_hip]},
         {SynapticonSlave1, Synapticon, 0x603F, 0, &offset.Error_code[r_hip]},
 
         // slave - 2
@@ -405,6 +476,10 @@ ec_pdo_entry_reg_t domain_Tx_reg[] = {
         {SynapticonSlave5, Synapticon, 0x230A, 0, &offset.second_position[l_knee]},
         {SynapticonSlave5, Synapticon, 0x230B, 0, &offset.second_velocity[l_knee]},
         {SynapticonSlave5, Synapticon, 0x603F, 0, &offset.Error_code[l_knee]},
+
+        // TODO: actual GRF input configuration may be changed.
+        {SynapticonSlave5, Synapticon, 0x2401, 0, &offset.analog_in1[l_knee]},
+        {SynapticonSlave5, Synapticon, 0x2402, 0, &offset.analog_in2[l_knee]},
 
         // slave - 6
         {SynapticonSlave6, Synapticon, 0x6041, 0, &offset.status_word[l_ankle]},
@@ -482,7 +557,7 @@ static ec_sync_info_t device_syncs[] = {
 void releaseMaster(void) {
     if (master) {
         std::cout << std::endl;
-        std::cout << "End of program, release master." << std::endl;
+        std::cout << "Released EtherCAT-Master Object." << std::endl;
         ecrt_release_master(master);
         master = NULL;
     }
@@ -636,8 +711,7 @@ void check_slave_config_states(void) {
     }
 }
 
-int ActivateMaster(void) {
-    int ret;
+int ActivateMaster() {
     std::cout << "Requesting master ... " << std::endl;
 
     if (master)
@@ -677,6 +751,10 @@ static void SIG_handle(int sig);
 void cyclic_task(int task_Cmd);
 
 int pause_to_continue() {
+    /**
+     * Only Used For Special DEBUG.
+     * ---- this function will interrupt EtherCAT communication loop
+     */
     std::cout << "Pause Now." << std::endl;
     std::cout << "Press any key to continue..." << std::endl;
     struct termios tm, tm_old;
@@ -694,13 +772,17 @@ int pause_to_continue() {
     return c;
 }
 
-// =========== Data Structure ============
-class AccData{
+// =========== Acc Data Class ============
+class AccData {
 public:
     AccData();
+
     AccData(double freq);
+
     double update(double input);
+
     double get() const;
+
     double getOld() const;
 
 private:
@@ -709,23 +791,50 @@ private:
     double freq;
 };
 
-AccData::AccData():old_data(0),acc(0),freq(0.001) {}
+AccData::AccData() : old_data(0), acc(0), freq(0.001) {}
 
-AccData::AccData(double freq) :old_data(0),acc(0),freq(freq) {}
+AccData::AccData(double freq) : old_data(0), acc(0), freq(freq) {}
 
 double AccData::get() const {
     return acc;
 }
 
-double AccData::getOld() const{
+double AccData::getOld() const {
     return old_data;
 }
 
 double AccData::update(double input) {
-    double res = (input - old_data)/freq;
+    double res = (input - old_data) / freq;
     old_data = input;
     acc = res;
     return res;
+}
+
+// ======== Some interface of EtherCAT ======
+inline void SwitchUp_OP_mode(int slave_id, int Mode) {
+    int Current_mode = EC_READ_S8(domainTx_pd + offset.modes_of_operation_display[slave_id]);
+    if (Current_mode != Mode)
+        EC_WRITE_S8(domainRx_pd + offset.operation_mode[slave_id], Mode);
+}
+
+void SwitchUp_OP_mode(bool Limb_side, int Mode) {
+    if (Limb_side == right) // define [Right <- false]
+    {
+        for (int i = 0; i < 3; i++) {
+            SwitchUp_OP_mode(i, Mode);
+        }
+    } else if (Limb_side == left) // [Left <- true]
+    {
+        for (int i = 4; i < 6; i++) {
+            SwitchUp_OP_mode(i, Mode);
+        }
+    }
+
+}
+
+void SwitchUp_OP_mode(int Mode) {
+    for (int i = 0; i < 6; i++)
+        SwitchUp_OP_mode(i, Mode);
 }
 
 #endif //EXOS_IMPEDANCECONTROL_EXOS_H

@@ -1,4 +1,4 @@
-/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/yc/CLionProjects/Neo_Exos
+/home/yc/Downloads/clion-2020.1.2/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/yc/CLionProjects/Neo_Exos_update/Neo_Exos
 -- Configuring done
 -- Generating done
--- Build files have been written to: /home/yc/CLionProjects/Neo_Exos/cmake-build-debug
+-- Build files have been written to: /home/yc/CLionProjects/Neo_Exos_update/Neo_Exos/cmake-build-debug
