@@ -52,6 +52,10 @@
 #define left  true
 #define right false
 
+//#define CURVE_1 //old curve
+//#define CURVE_2 //IMU curve
+#define CURVE_3 //public dataset
+
 //#define Drag_Impendance
 #define Tracking_Impendance
 //#define Sit2Stand_mode
@@ -89,12 +93,20 @@
 
 #ifdef Tracking_Impendance
 
-#define left_hip_init_rad -0.07
-#define left_knee_init_rad -0.15
-#define left_ankle_init_rad 0.2
-#define right_hip_init_rad -0.07
-#define right_knee_init_rad -0.15
-#define right_ankle_init_rad 0.2
+//#define left_hip_init_rad -0.07
+//#define left_knee_init_rad -0.15
+//#define left_ankle_init_rad 0.2
+//#define right_hip_init_rad -0.07
+//#define right_knee_init_rad -0.15
+//#define right_ankle_init_rad 0.2
+
+#define left_hip_init_rad 0.07
+#define left_knee_init_rad -0.06
+#define left_ankle_init_rad 0.1
+#define right_hip_init_rad 0.07
+#define right_knee_init_rad -0.06
+#define right_ankle_init_rad 0.1
+
 
 #endif
 
@@ -214,12 +226,12 @@ int reset_step = 0;
 /**
  * Fourier Series of Joint angle (for trajectory)
  */
+
+
+#ifdef CURVE_1
 double w_hip = 6.27659139567477;  // angle freq  = 2*pi*f where f is base freq
 double w_knee = w_hip;  // angle freq  = 2*pi*f where f is base freq
 double w_ankle = w_hip;  // angle freq  = 2*pi*f where f is base freq
-
-//double a_hip[8] = {0.308750228166298, -0.0301760062107781, 0.00505607355750842, 0.00159201009938250,
-//                   -0.00281684827129251, 0.00129439626305321, -0.00504290840263287, 0.00382003697292678};
 
 double a_hip[8] = {0.295123922790271, -0.0396807769917732, 0.00295426462630461, 0.00655880115321634,
                    0.00595258148856191, 0.00995653597100669, 0.000482635171710305, 0.00602219880116759};
@@ -239,6 +251,45 @@ double a_ankle[8] = {-0.109863815437901, -0.00833917060475227, -0.09895988580207
 double b_ankle[8] = {0.0549542830785040, -0.109350901714820, 0.0184124040787744, 0.0114596100947102,
                      -0.0141854746312045, 0.0107960677657798, -0.00738513480814346, -0.000616125357164900};
 double a0_ankle = -0.0364079750372623;
+#endif
+
+#ifdef CURVE_2
+double w_hip = 6.29;  // angle freq  = 2*pi*f where f is base freq
+double w_knee = 6.3;  // angle freq  = 2*pi*f where f is base freq
+double w_ankle = 6.207;  // angle freq  = 2*pi*f where f is base freq
+double a_hip[8] = {0.2721, -0.0704, 0.0005, -0.0019, 0.0039, 0.0060, 0, 0};
+
+double b_hip[8] = {-0.1089, 0.0047, 0.0311, -0.0010, 0.0071, -0.0014, 0, 0};
+double a0_hip = 0.1252;
+
+double a_knee[8] = {0.1604, 0.2552, -0.0185, 0.0075, -0.0177, -0.0095, 0, 0};
+double b_knee[8] = {0.3534, -0.2084, -0.0844, -0.0230, -0.0178, -0.0011, 0, 0};
+double a0_knee = -0.4885;
+
+double a_ankle[8] = {0.0174, -0.0006, -0.0488, 0.0394, -0.0207, 0.0143, -0.0045, -0.0006};
+double b_ankle[8] = {0.1429, -0.1078, 0.0231, -0.0302, -0.0169, -0.0008, -0.0166, 0.0052};
+double a0_ankle = 0.0938;
+#endif
+
+#ifdef CURVE_3
+
+double w_hip = 6.517;  // angle freq  = 2*pi*f where f is base freq
+double w_knee = 6.246;  // angle freq  = 2*pi*f where f is base freq
+double w_ankle = 6.2;  // angle freq  = 2*pi*f where f is base freq
+double a_hip[8] = {0.3446  , -0.03227 ,-0.01878 , 0.00119  ,-0.006187 ,-0.00256  , 0, 0 };
+double b_hip[8] = {-0.01189, -0.04217 , 0.02241 ,-0.001037 ,-0.001478 ,-0.0003051, 0, 0 };
+double a0_hip = 0.2458;
+
+double a_knee[8] = {0.04588 , 0.2734  ,0.02045 ,0.01562  ,0.01066 , -0.003288 ,0 ,0};
+double b_knee[8] = {0.3808  ,  -0.108   , -0.09075 , -0.007642 , -0.01503 , -0.003579 ,0 ,0};
+double a0_knee = -0.3574;
+
+double a_ankle[8] = {-0.04202 ,0.00806 ,-0.06863 ,0.03513  ,-0.0007702 ,0.008006 ,0.01149   ,0.002248};
+double b_ankle[8] = {0.07892  ,-0.1166 ,0.01499  ,0.003162 ,-0.01819   ,0.008057 ,-0.005009 ,0.001317};
+double a0_ankle = 0.05508;
+
+
+#endif
 
 /**
  * FOR IDENTIFY FOURIER PARAMETERS
@@ -263,24 +314,24 @@ double i_a0_ankle = 0.9358;
  * FOR STAND2SIT
  */
 
-double sit_a_hip[2] = {4.137,-0.551};
-double sit_a_knee[2] = {-4.137,0.551};
-double sit_a_ankle[4] = {-0.0977,0.00304,-0.00520,0.00445};
-double sit_b_hip[2] = {4.478,-1.837};
-double sit_b_knee[2] = {-4.478,1.837};
-double sit_b_ankle[4] = {-0.01782,0.03163,0.0134,-0.00118};
+double sit_a_hip[2] = {4.137, -0.551};
+double sit_a_knee[2] = {-4.137, 0.551};
+double sit_a_ankle[4] = {-0.0977, 0.00304, -0.00520, 0.00445};
+double sit_b_hip[2] = {4.478, -1.837};
+double sit_b_knee[2] = {-4.478, 1.837};
+double sit_b_ankle[4] = {-0.01782, 0.03163, 0.0134, -0.00118};
 double sit_a0_hip = -3.56;
 double sit_a0_knee = 3.56;
 double sit_a0_ankle = 0.06502;
-double sit_w  = 0.000358;
+double sit_w = 0.000358;
 double sit_w_ankle = 0.001176;
 
 /**
  * ==========================================================
  */
 
-int P_main = 3000; // default time of Gait Cycle [ms]
-int P_sub = 3000;
+int P_main = 2500; // default time of Gait Cycle [ms]
+int P_sub = 2500;
 
 // Offsets for PDO entries
 static struct {
@@ -772,7 +823,7 @@ void SwitchUp_OP_mode(bool Limb_side, int Mode) {
         for (int i = 0; i < 3; i++) {
             SwitchUp_OP_mode(i, Mode);
         }
-    } else if(Limb_side == left) // [Left <- true]
+    } else if (Limb_side == left) // [Left <- true]
     {
         for (int i = 4; i < 6; i++) {
             SwitchUp_OP_mode(i, Mode);
@@ -781,9 +832,9 @@ void SwitchUp_OP_mode(bool Limb_side, int Mode) {
 
 }
 
-void SwitchUp_OP_mode(int Mode){
-    for(int i = 0; i< 6; i++)
-        SwitchUp_OP_mode(i,Mode);
+void SwitchUp_OP_mode(int Mode) {
+    for (int i = 0; i < 6; i++)
+        SwitchUp_OP_mode(i, Mode);
 }
 
 #endif //EXOS_IMPEDANCECONTROL_EXOS_H

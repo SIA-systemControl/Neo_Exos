@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
             std::cout << "Modified Impedance para: [" << commandPara.impedance_K[0] << ',' << commandPara.impedance_K[1]
                       << ',' << commandPara.impedance_K[2] << ']' << std::endl;
         } else
-            std::cout << "Impedance para using default configure: [80,80,30]" << std::endl;
+            std::cout << "Impedance para using default configure: [80,80,40]" << std::endl;
         std::cout << "===================================================" << std::endl;
     }
 
